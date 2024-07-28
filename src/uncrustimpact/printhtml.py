@@ -22,18 +22,27 @@ def print_to_html(changes: Changes) -> str:
 <html>
 <head>
     <style>
-        table pre {margin: 0;}
+        table pre { margin: 0; }
+
+        .codediff { background-color: #abb2b9; }
+        .codediff .added { background-color: #eaecee; }
+        .codediff .changed { background-color: #d5d8dc; }
+        .codediff .removed { background-color: #808b96; }
+
+        .codediff .colnum { padding-right: 12; }
+        .codediff .colmod { padding-left: 12; }
     </style>
 </head>
 <body>
 """
 
-    changes_list = changes.to_list_raw()
+    changes_list = changes.to_list_raw(removed_as_changed=True)
     print("raw list:")
     pprint.pprint(changes_list, indent=4)
 
-    ret_content += "<table>\n"
+    ret_content += """<table cellspacing="0" class="codediff">\n"""
 
+    prev_line = -1
     # item: LineModifiers
     for line_num, line_content, modifier_state, files_list in changes_list:
         index_content = ""
@@ -45,21 +54,35 @@ def print_to_html(changes: Changes) -> str:
             line_content = html.escape(line_content)
             line_content = f"<pre>{line_content}</pre>"
 
+        modifier_label = ""
         if modifier_state == LineModifier.SAME:
-            modifier_state = ""
+            modifier_label = ""
         elif modifier_state == LineModifier.ADDED:
-            modifier_state = "a"
+            modifier_label = "a"
         elif modifier_state == LineModifier.CHANGED:
-            modifier_state = "m"
+            modifier_label = "m"
         elif modifier_state == LineModifier.REMOVED:
-            modifier_state = "r"
+            modifier_label = "r"
         else:
             raise RuntimeError(f"invalid state: {modifier_state}")
 
+        modifier_label = ""
         if files_list:
-            modifier_state = f"{modifier_state}: " + " ".join(files_list)
+            modifier_label = " ".join(files_list)
 
-        ret_content += f"<tr><td>{index_content}</td> <td>{line_content}</td> <td>{modifier_state}</td></tr>\n"
+        if prev_line == line_num:
+            index_content = ""
+            line_content = ""
+
+        row_class = modifier_state.name.lower()
+
+        ret_content += f"""<tr class="line {row_class}">\
+<td class="colnum">{index_content}</td> \
+<td class="colcode">{line_content}</td> \
+<td class="colmod">{modifier_label}</td>\
+</tr>\n"""
+
+        prev_line = line_num
 
     ret_content += "</table>\n"
 

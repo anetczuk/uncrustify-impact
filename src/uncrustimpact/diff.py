@@ -273,7 +273,7 @@ class Changes:
     def to_dict_raw(self):
         return self.file_state.to_dict_raw()
 
-    def to_list_raw(self):
+    def to_list_raw(self, removed_as_changed=False):
         changes_dict = self.to_dict_modifiers()
 
         ret_list = []
@@ -287,15 +287,21 @@ class Changes:
 
             appended = False
 
-            changed_files = item.get_modifier_files(LineModifier.CHANGED)
-            if changed_files:
-                ret_list.append((index + 1, line_content, LineModifier.CHANGED, changed_files))
-                appended = True
+            if removed_as_changed is False:
+                changed_files = item.get_modifier_files(LineModifier.CHANGED)
+                if changed_files:
+                    ret_list.append((index + 1, line_content, LineModifier.CHANGED, changed_files))
+                    appended = True
 
-            removed_files = item.get_modifier_files(LineModifier.REMOVED)
-            if removed_files:
-                ret_list.append((index + 1, line_content, LineModifier.REMOVED, removed_files))
-                appended = True
+                removed_files = item.get_modifier_files(LineModifier.REMOVED)
+                if removed_files:
+                    ret_list.append((index + 1, line_content, LineModifier.REMOVED, removed_files))
+                    appended = True
+            else:
+                modified_files = item.get_modified_files()
+                if modified_files:
+                    ret_list.append((index + 1, line_content, LineModifier.CHANGED, modified_files))
+                    appended = True
 
             added_files = item.get_modifier_files(LineModifier.ADDED)
             if added_files:

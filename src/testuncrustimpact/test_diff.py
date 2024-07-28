@@ -59,12 +59,7 @@ class DiffTest(unittest.TestCase):
 
         changes_dict = changes.to_dict_raw()
         self.assertEqual(
-            {
-                -1: [],
-                0: [("new.txt", "SAME"), ("new.txt", "ADDED")],
-                1: [("new.txt", "SAME")],
-            },
-            changes_dict,
+            {-1: [], 0: [("new.txt", "SAME"), ("new.txt", "ADDED")], 1: [("new.txt", "SAME")]}, changes_dict
         )
 
     def test_add_last(self):
@@ -79,12 +74,7 @@ class DiffTest(unittest.TestCase):
 
         changes_dict = changes.to_dict_raw()
         self.assertEqual(
-            {
-                -1: [],
-                0: [("new.txt", "SAME")],
-                1: [("new.txt", "SAME"), ("new.txt", "ADDED")],
-            },
-            changes_dict,
+            {-1: [], 0: [("new.txt", "SAME")], 1: [("new.txt", "SAME"), ("new.txt", "ADDED")]}, changes_dict
         )
 
     def test_changed_first_added(self):
@@ -142,13 +132,7 @@ class DiffTest(unittest.TestCase):
 
         changes_dict = changes.to_dict_raw()
         self.assertEqual(
-            {
-                -1: [],
-                0: [("new.txt", "SAME")],
-                1: [("new.txt", "CHANGED")],
-                2: [("new.txt", "SAME")],
-            },
-            changes_dict,
+            {-1: [], 0: [("new.txt", "SAME")], 1: [("new.txt", "CHANGED")], 2: [("new.txt", "SAME")]}, changes_dict
         )
 
     def test_changed_last(self):
@@ -163,11 +147,5 @@ class DiffTest(unittest.TestCase):
 
         changes_dict = changes.to_dict_raw()
         self.assertEqual(
-            {
-                -1: [],
-                0: [("new.txt", "SAME")],
-                1: [("new.txt", "SAME")],
-                2: [("new.txt", "CHANGED")],
-            },
-            changes_dict,
+            {-1: [], 0: [("new.txt", "SAME")], 1: [("new.txt", "SAME")], 2: [("new.txt", "CHANGED")]}, changes_dict
         )

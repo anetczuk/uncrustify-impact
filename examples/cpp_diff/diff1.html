@@ -1,35 +1,43 @@
 <html>
 <head>
     <style>
-        table pre {margin: 0;}
+        table pre { margin: 0; }
+
+        .codediff { background-color: #abb2b9; }
+        .codediff .added { background-color: #eaecee; }
+        .codediff .changed { background-color: #d5d8dc; }
+        .codediff .removed { background-color: #808b96; }
+
+        .codediff .colnum { padding-right: 12; }
+        .codediff .colmod { padding-left: 12; }
     </style>
 </head>
 <body>
-<table>
-<tr><td><pre>1:</pre></td> <td><pre>/// file taken from:</pre></td> <td>m: example_changed.cpp</td></tr>
-<tr><td><pre>2:</pre></td> <td><pre>/// 	https://www.geeksforgeeks.org/header-files-in-c-c-with-examples/</pre></td> <td></td></tr>
-<tr><td><pre>3:</pre></td> <td><pre></pre></td> <td></td></tr>
-<tr><td><pre>4:</pre></td> <td><pre>// C++ program to demonstrate the inclusion of header file.</pre></td> <td></td></tr>
-<tr><td><pre>5:</pre></td> <td><pre></pre></td> <td></td></tr>
-<tr><td><pre>6:</pre></td> <td><pre>#include &lt;cmath&gt; // Including the standard header file for math operations</pre></td> <td></td></tr>
-<tr><td><pre>7:</pre></td> <td><pre>#include &lt;iostream&gt;</pre></td> <td></td></tr>
-<tr><td><pre>8:</pre></td> <td><pre></pre></td> <td>r: example_changed.cpp</td></tr>
-<tr><td><pre>9:</pre></td> <td><pre>using namespace std;</pre></td> <td></td></tr>
-<tr><td><pre>10:</pre></td> <td><pre></pre></td> <td></td></tr>
-<tr><td></td> <td></td> <td>a: example_changed.cpp</td></tr>
-<tr><td><pre>11:</pre></td> <td><pre>int main()</pre></td> <td>m: example_changed.cpp</td></tr>
-<tr><td><pre>12:</pre></td> <td><pre>{</pre></td> <td>r: example_changed.cpp</td></tr>
-<tr><td><pre>13:</pre></td> <td><pre>    // Using functions from the included header file</pre></td> <td></td></tr>
-<tr><td><pre>14:</pre></td> <td><pre>    // (&lt;cmath&gt;)</pre></td> <td></td></tr>
-<tr><td><pre>15:</pre></td> <td><pre>    int sqrt_res = sqrt(25);</pre></td> <td></td></tr>
-<tr><td><pre>16:</pre></td> <td><pre>    int pow_res = pow(2, 3);</pre></td> <td>m: example_changed.cpp</td></tr>
-<tr><td><pre>17:</pre></td> <td><pre></pre></td> <td></td></tr>
-<tr><td><pre>18:</pre></td> <td><pre>    // Displaying the results</pre></td> <td>m: example_changed.cpp</td></tr>
-<tr><td><pre>19:</pre></td> <td><pre>    cout &lt;&lt; &quot;Square root of 25 is: &quot; &lt;&lt; sqrt_res &lt;&lt; endl;</pre></td> <td></td></tr>
-<tr><td><pre>20:</pre></td> <td><pre>    cout &lt;&lt; &quot;2^3 (2 raised to the power of 3) is: &quot;</pre></td> <td></td></tr>
-<tr><td><pre>21:</pre></td> <td><pre>         &lt;&lt; pow_res &lt;&lt; endl;</pre></td> <td></td></tr>
-<tr><td><pre>22:</pre></td> <td><pre></pre></td> <td></td></tr>
-<tr><td><pre>23:</pre></td> <td><pre>    return 0;</pre></td> <td></td></tr>
-<tr><td><pre>24:</pre></td> <td><pre>}</pre></td> <td></td></tr>
+<table cellspacing="0" class="codediff">
+<tr class="line changed"><td class="colnum"><pre>1:</pre></td> <td class="colcode"><pre>/// file taken from:</pre></td> <td class="colmod">example_changed.cpp</td></tr>
+<tr class="line same"><td class="colnum"><pre>2:</pre></td> <td class="colcode"><pre>/// 	https://www.geeksforgeeks.org/header-files-in-c-c-with-examples/</pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>3:</pre></td> <td class="colcode"><pre></pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>4:</pre></td> <td class="colcode"><pre>// C++ program to demonstrate the inclusion of header file.</pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>5:</pre></td> <td class="colcode"><pre></pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>6:</pre></td> <td class="colcode"><pre>#include &lt;cmath&gt; // Including the standard header file for math operations</pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>7:</pre></td> <td class="colcode"><pre>#include &lt;iostream&gt;</pre></td> <td class="colmod"></td></tr>
+<tr class="line changed"><td class="colnum"><pre>8:</pre></td> <td class="colcode"><pre>/// end of includes</pre></td> <td class="colmod">example_changed.cpp</td></tr>
+<tr class="line same"><td class="colnum"><pre>9:</pre></td> <td class="colcode"><pre>using namespace std;</pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>10:</pre></td> <td class="colcode"><pre></pre></td> <td class="colmod"></td></tr>
+<tr class="line added"><td class="colnum"></td> <td class="colcode"></td> <td class="colmod">example_changed.cpp</td></tr>
+<tr class="line changed"><td class="colnum"><pre>11:</pre></td> <td class="colcode"><pre>int main()</pre></td> <td class="colmod">example_changed.cpp</td></tr>
+<tr class="line changed"><td class="colnum"><pre>12:</pre></td> <td class="colcode"><pre>{</pre></td> <td class="colmod">example_changed.cpp</td></tr>
+<tr class="line same"><td class="colnum"><pre>13:</pre></td> <td class="colcode"><pre>    // Using functions from the included header file</pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>14:</pre></td> <td class="colcode"><pre>    // (&lt;cmath&gt;)</pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>15:</pre></td> <td class="colcode"><pre>    int sqrt_res = sqrt(25);</pre></td> <td class="colmod"></td></tr>
+<tr class="line changed"><td class="colnum"><pre>16:</pre></td> <td class="colcode"><pre>    int pow_res = pow(2, 3);</pre></td> <td class="colmod">example_changed.cpp</td></tr>
+<tr class="line same"><td class="colnum"><pre>17:</pre></td> <td class="colcode"><pre></pre></td> <td class="colmod"></td></tr>
+<tr class="line changed"><td class="colnum"><pre>18:</pre></td> <td class="colcode"><pre>    // Displaying the results</pre></td> <td class="colmod">example_changed.cpp</td></tr>
+<tr class="line same"><td class="colnum"><pre>19:</pre></td> <td class="colcode"><pre>    cout &lt;&lt; &quot;Square root of 25 is: &quot; &lt;&lt; sqrt_res &lt;&lt; endl;</pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>20:</pre></td> <td class="colcode"><pre>    cout &lt;&lt; &quot;2^3 (2 raised to the power of 3) is: &quot;</pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>21:</pre></td> <td class="colcode"><pre>         &lt;&lt; pow_res &lt;&lt; endl;</pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>22:</pre></td> <td class="colcode"><pre></pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>23:</pre></td> <td class="colcode"><pre>    return 0;</pre></td> <td class="colmod"></td></tr>
+<tr class="line same"><td class="colnum"><pre>24:</pre></td> <td class="colcode"><pre>}</pre></td> <td class="colmod"></td></tr>
 </table>
 </body></html>
