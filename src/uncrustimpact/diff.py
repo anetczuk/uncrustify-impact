@@ -46,10 +46,8 @@ class LineState:
 
 
 class LineModifiers:
-    def __init__(self, file_name, modifier=None):
+    def __init__(self):
         self.modifiers: List[LineState] = []
-        if modifier:
-            self.modifiers.append(LineState(file_name, modifier))
 
     def is_empty(self) -> bool:
         return not self.modifiers
@@ -164,11 +162,11 @@ class ModifyStream:
 
 
 class FileState:
-    def __init__(self, file_name, length):
-        self.before: LineModifiers = LineModifiers(file_name)
+    def __init__(self, length):
+        self.before: LineModifiers = LineModifiers()
         self.line_state: List[LineModifiers] = []
         for _ in range(0, length):
-            self.line_state.append(LineModifiers(file_name, LineModifier.SAME))
+            self.line_state.append(LineModifiers())
         self._modify_stream = ModifyStream()
         self._line_counter = -1
 
@@ -248,7 +246,7 @@ class Changes:
         self.base_file_name = file_name
         self.base_lines = base_lines
         file_length = len(base_lines)
-        self.file_state = FileState(file_name, file_length)
+        self.file_state = FileState(file_length)
 
     def get_content_line(self, line_index):
         return self.base_lines[line_index]
