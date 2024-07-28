@@ -22,21 +22,20 @@ from uncrustimpact.diff import Changes
 from uncrustimpact.printhtml import print_to_html
 
 
-def compare(filename1, filename2, outname):
-    file1_path = os.path.join(SCRIPT_DIR, filename1)
-    file2_path = os.path.join(SCRIPT_DIR, filename2)
+def compare(filename_base, filename_list, outname):
+    file1_path = os.path.join(SCRIPT_DIR, filename_base)
 
     with open(file1_path, encoding="utf-8") as file_1:
-        file1_text = file_1.readlines()
+        filebase_text = file_1.readlines()
 
-    with open(file2_path, encoding="utf-8") as file_2:
-        file2_text = file_2.readlines()
+    changes = Changes(filename_base, filebase_text)
 
-    changes = Changes(filename1, file1_text)
-
-    changes.add_diff(filename2, file2_text)
-
-    changes.print_diff_raw(file2_text)
+    for item in filename_list:
+        item_path = os.path.join(SCRIPT_DIR, item)
+        with open(item_path, encoding="utf-8") as item_file:
+            item_text = item_file.readlines()
+        changes.print_diff_raw(item_text)
+        changes.add_diff(item, item_text)
 
     content = print_to_html(changes)
 
@@ -54,5 +53,6 @@ file1_name = "example.cpp"
 file2_name = "example_changed.cpp"
 file3_name = "example_changed2.cpp"
 
-compare(file1_name, file2_name, "diff1.html")
-compare(file1_name, file3_name, "diff2.html")
+compare(file1_name, [file2_name], "diff1.html")
+compare(file1_name, [file3_name], "diff2.html")
+compare(file1_name, [file2_name, file3_name], "diff3.html")

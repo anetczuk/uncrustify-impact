@@ -9,8 +9,9 @@
 
 import os
 import html
+import pprint
 
-from uncrustimpact.diff import Changes
+from uncrustimpact.diff import Changes, LineModifier
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -28,29 +29,35 @@ def print_to_html(changes: Changes) -> str:
 """
 
     changes_list = changes.to_list_raw()
-    print(changes_list)
+    print("raw list:")
+    pprint.pprint(changes_list, indent=4)
 
     ret_content += "<table>\n"
 
     # item: LineModifiers
-    for index, line_content, modifier_state, files_list in changes_list:
+    for line_num, line_content, modifier_state, files_list in changes_list:
         index_content = ""
-        if index is not None:
-            index_content = f"<pre>{index}:</pre>"
+        if line_num is not None:
+            index_content = f"<pre>{line_num}:</pre>"
 
         if line_content:
             line_content = line_content.rstrip("\r\n")
             line_content = html.escape(line_content)
             line_content = f"<pre>{line_content}</pre>"
 
-        if modifier_state:
-            if modifier_state == "added":
-                modifier_state = "a"
-            elif modifier_state == "modified":
-                modifier_state = "m"
-            modifier_state = f"{modifier_state}: " + " ".join(files_list)
-        else:
+        if modifier_state == LineModifier.SAME:
             modifier_state = ""
+        elif modifier_state == LineModifier.ADDED:
+            modifier_state = "a"
+        elif modifier_state == LineModifier.CHANGED:
+            modifier_state = "m"
+        elif modifier_state == LineModifier.REMOVED:
+            modifier_state = "r"
+        else:
+            raise RuntimeError(f"invalid state: {modifier_state}")
+
+        if files_list:
+            modifier_state = f"{modifier_state}: " + " ".join(files_list)
 
         ret_content += f"<tr><td>{index_content}</td> <td>{line_content}</td> <td>{modifier_state}</td></tr>\n"
 

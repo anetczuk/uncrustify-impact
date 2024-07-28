@@ -87,7 +87,8 @@ class DiffTest(unittest.TestCase):
             changes_dict,
         )
 
-    def test_changed_first(self):
+    def test_changed_first_added(self):
+        ## added content to first line
         base_content = ["line1\n"]
         changes = Changes("base.txt", base_content)
 
@@ -100,14 +101,43 @@ class DiffTest(unittest.TestCase):
         changes_dict = changes.to_dict_raw()
         self.assertEqual({-1: [], 0: [("base.txt", "SAME"), ("new.txt", "CHANGED")]}, changes_dict)
 
-    def test_changed_middle(self):
+    def test_changed_first_removed(self):
+        ## removed content from first line
+        base_content = ["line1\n"]
+        changes = Changes("base.txt", base_content)
+
+        new_content = ["line\n"]
+        # changes.print_diff_raw(new_content)
+        changes.add_diff("new.txt", new_content)
+
+        # changes.print_diff(False)
+
+        changes_dict = changes.to_dict_raw()
+        self.assertEqual({-1: [], 0: [("base.txt", "SAME"), ("new.txt", "CHANGED")]}, changes_dict)
+
+    def test_changed_first_modified(self):
+        ## removed content from first line
+        base_content = ["line1\n"]
+        changes = Changes("base.txt", base_content)
+
+        new_content = ["line2\n"]
+        # changes.print_diff_raw(new_content)
+        changes.add_diff("new.txt", new_content)
+
+        # changes.print_diff(False)
+
+        changes_dict = changes.to_dict_raw()
+        self.assertEqual({-1: [], 0: [("base.txt", "SAME"), ("new.txt", "CHANGED")]}, changes_dict)
+
+    def test_changed_middle_added(self):
+        # added content in middle line
         base_content = ["line1\n", "line2\n", "line3\n"]
         changes = Changes("base.txt", base_content)
 
         new_content = ["line1\n", "line2b\n", "line3\n"]
+        # changes.print_diff_raw(new_content)
         changes.add_diff("new.txt", new_content)
 
-        # changes.print_diff_raw(new_content)
         # changes.print_diff(False)
 
         changes_dict = changes.to_dict_raw()

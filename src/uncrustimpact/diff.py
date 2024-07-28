@@ -21,9 +21,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 @unique
 class LineModifier(Enum):
-    SAME = (auto(),)
-    CHANGED = (auto(),)
-    ADDED = (auto(),)
+    SAME = auto()
+    CHANGED = auto()
+    ADDED = auto()
     REMOVED = auto()
 
 
@@ -114,20 +114,33 @@ class ModifyStream:
             self._append(line_number, modifier)
             return self.flush()
 
-        if modifier == LineModifier.CHANGED:
-            if len(self.modify_list) != 2:
+        if modifier == LineModifier.CHANGED:  # "?" question mark
+            if len(self.modify_list) == 1:
+                # line modification case - question mark line indicating removed content
+                # there will be line with question mark indicating added content
+                return []
+            if len(self.modify_list) != 0:
+                # print("modify_list:", self.modify_list)
                 raise RuntimeError("invalid state")
-            self.modify_list.clear()
-            self._append(line_number - 1, modifier)
-            return self.flush()
+            # skip question mark line
+            return []
+            # line_num = self.modify_list[0][0]
+            # self.modify_list.clear()
+            # self._append(line_num, modifier)
+            # return self.flush()
 
         if modifier == LineModifier.ADDED:
             if not self.modify_list:
                 self._append(line_number, modifier)
                 return self.flush()
-            if self.modify_list[-1][1] == LineModifier.REMOVED:
-                self._append(line_number, modifier)
-                return []
+            prev_mod = self.modify_list[-1]
+            if prev_mod[1] == LineModifier.REMOVED:
+                # self._append(line_number, modifier)
+                # return []
+                line_num = prev_mod[0]
+                self.modify_list.clear()
+                self._append(line_num, LineModifier.CHANGED)
+                return self.flush()
             return self._append(line_number, modifier)
 
         if modifier == LineModifier.REMOVED:
@@ -201,7 +214,7 @@ class FileState:
                 continue
             if line.startswith("? "):
                 # line modified
-                self._line_counter += 1
+                # self._line_counter += 1
                 self._add_state(file_name, LineModifier.CHANGED)
                 continue
             raise RuntimeError("unknown marker")
@@ -274,20 +287,32 @@ class Changes:
 
             line_content = self.get_content_line(index)
 
-            modified_files = item.get_modified_files()
-            if modified_files:
-                ret_list.append((index, line_content, "modified", modified_files))
-                continue
+            appended = False
+
+            changed_files = item.get_modifier_files(LineModifier.CHANGED)
+            if changed_files:
+                ret_list.append((index + 1, line_content, LineModifier.CHANGED, changed_files))
+                appended = True
+
+            removed_files = item.get_modifier_files(LineModifier.REMOVED)
+            if removed_files:
+                ret_list.append((index + 1, line_content, LineModifier.REMOVED, removed_files))
+                appended = True
 
             added_files = item.get_modifier_files(LineModifier.ADDED)
-
             if added_files:
                 if item.has_modifier(LineModifier.SAME):
-                    ret_list.append((index, line_content, None, None))
-                ret_list.append((None, "", "added", added_files))
+                    if not ret_list or ret_list[-1][0] != index + 1:
+                        # add "same" if there is no modification of the same line
+                        ret_list.append((index + 1, line_content, LineModifier.SAME, None))
+                ret_list.append((None, "", LineModifier.ADDED, added_files))
+                appended = True
+
+            if appended:
                 continue
+
             if item.has_modifier(LineModifier.SAME):
-                ret_list.append((index, line_content, None, None))
+                ret_list.append((index + 1, line_content, LineModifier.SAME, None))
                 continue
 
             raise RuntimeError(f"invalid state - unhandled case: {index}: {item.to_str()}")
