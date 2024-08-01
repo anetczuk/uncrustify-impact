@@ -26,13 +26,16 @@ class ParamType(Enum):
 
 
 def print_params_space():
+    params_space_dict = get_default_params_space()
+    json.dump(params_space_dict, sys.stdout, indent=4)
+
+
+def get_default_params_space():
     default_cfg_path = "/tmp/uncrustify_show-config.txt"  # nosec
     error_code = os.system(f"uncrustify --show-config > {default_cfg_path}")  # nosec
     if error_code != 0:
         raise RuntimeError("unable to execute uncrustify")
-
-    params_dict = read_params_space(default_cfg_path)
-    json.dump(params_dict, sys.stdout, indent=4)
+    return read_params_space(default_cfg_path)
 
 
 def read_params_space(cfg_path):
@@ -78,3 +81,12 @@ def read_params_space(cfg_path):
         all_params_dict[name] = param_dict
 
     return all_params_dict
+
+
+def write_dict_to_cfg(params_dict, out_path):
+    with open(out_path, "w", encoding="utf-8") as out_file:
+        content = ""
+        for param_name, param_data in params_dict.items():
+            param_val = param_data["value"]
+            content += f"""{param_name} = {param_val}\n"""
+        out_file.write(content)

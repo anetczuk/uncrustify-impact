@@ -13,6 +13,7 @@ import os
 import logging
 import argparse
 from uncrustimpact.cfgparser import print_params_space
+from uncrustimpact.impact import calculate_impact
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -23,8 +24,19 @@ _LOGGER = logging.getLogger(__name__)
 # =============================================================
 
 
-def gen_params_space_dict(_args):
+def gen_params_space_dict_tool(_args):
     print_params_space()
+
+
+def calculate_impact_tool(args):
+    input_file_path = args.file
+    input_config_path = args.config
+    output_dir_path = args.outputdir
+    ignore_params = args.ignoreparams
+    randomseed = args.randomseed
+    calculate_impact(
+        input_file_path, input_config_path, output_dir_path, ignore_params=ignore_params, randomseed=randomseed
+    )
 
 
 # =============================================================
@@ -43,7 +55,19 @@ def main():
     description = "generate parameters space dict"
     subparser = subparsers.add_parser("genparamsdict", help=description)
     subparser.description = description
-    subparser.set_defaults(func=gen_params_space_dict)
+    subparser.set_defaults(func=gen_params_space_dict_tool)
+
+    ## =================================================
+
+    description = "calculate config impact"
+    subparser = subparsers.add_parser("impact", help=description)
+    subparser.description = description
+    subparser.set_defaults(func=calculate_impact_tool)
+    subparser.add_argument("-f", "--file", action="store", required=True, help="File to analyze")
+    subparser.add_argument("-c", "--config", action="store", required=True, help="Base uncrustify config")
+    subparser.add_argument("-od", "--outputdir", action="store", required=True, help="Output directory")
+    subparser.add_argument("-ip", "--ignoreparams", nargs="+", default=[], help="Parameters list to ignore")
+    subparser.add_argument("--randomseed", action="store", default=None, help="Seed for random number generator")
 
     ## =================================================
 

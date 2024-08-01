@@ -253,7 +253,7 @@ class Changes:
 
     def add_diff(self, file_name, content_lines):
         ## checks whole file
-        diff = difflib.ndiff(self.base_lines, content_lines)
+        diff_list = self.calculate_diff(content_lines)
 
         ## does not compare whole file
         # diff = difflib.context_diff( file1_text, file2_text,
@@ -267,7 +267,6 @@ class Changes:
         #                              tofile='file2.txt',
         #                              n=0)
 
-        diff_list = list(diff)
         self.file_state.parse_diff(file_name, diff_list)
 
     def to_dict_raw(self):
@@ -327,9 +326,7 @@ class Changes:
         return self.file_state.to_dict_modifiers()
 
     def print_diff_raw(self, content_lines):
-        diff = difflib.ndiff(self.base_lines, content_lines)
-        # print(diff)
-        diff_list = list(diff)
+        diff_list = self.calculate_diff(content_lines)
         for index, line in enumerate(diff_list):
             print(f"{index} >{line}", end="")
 
@@ -340,3 +337,7 @@ class Changes:
             print(out)
         else:
             print(data_dict)
+
+    def calculate_diff(self, content_lines):
+        diff = difflib.ndiff(self.base_lines, content_lines)
+        return list(diff)

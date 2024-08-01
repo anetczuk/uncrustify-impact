@@ -9,7 +9,6 @@
 
 import os
 import html
-import pprint
 
 from uncrustimpact.diff import Changes, LineModifier
 
@@ -17,7 +16,7 @@ from uncrustimpact.diff import Changes, LineModifier
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def print_to_html(changes: Changes) -> str:
+def print_to_html(changes: Changes, label_converter=None) -> str:
     ret_content = """\
 <html>
 <head>
@@ -37,14 +36,14 @@ def print_to_html(changes: Changes) -> str:
 """
 
     changes_list = changes.to_list_raw(removed_as_changed=True)
-    print("raw list:")
-    pprint.pprint(changes_list, indent=4)
+    # print("raw list:")
+    # pprint.pprint(changes_list, indent=4)
 
     ret_content += """<table cellspacing="0" class="codediff">\n"""
 
     prev_line = -1
     # item: LineModifiers
-    for line_num, line_content, modifier_state, files_list in changes_list:
+    for line_num, line_content, modifier_state, labels_list in changes_list:
         index_content = ""
         if line_num is not None:
             index_content = f"<pre>{line_num}:</pre>"
@@ -67,8 +66,10 @@ def print_to_html(changes: Changes) -> str:
             raise RuntimeError(f"invalid state: {modifier_state}")
 
         modifier_label = ""
-        if files_list:
-            modifier_label = " ".join(files_list)
+        if label_converter:
+            labels_list = label_converter(labels_list)
+        if labels_list:
+            modifier_label = " ".join(labels_list)
 
         if prev_line == line_num:
             index_content = ""
