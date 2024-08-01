@@ -27,7 +27,8 @@ def execute_uncrustify(input_file_path, base_config_path, out_file_path):
 
 
 def calculate_impact(
-    base_file_path, base_config_path, output_base_dir_path, params_space_path=None, ignore_params=None, randomseed=None
+    base_file_path, base_config_path, output_base_dir_path, params_space_path=None,
+    ignore_params=None, consider_params=None, random_seed=None
 ):
     uncrust_dir_path = os.path.join(output_base_dir_path, "uncrustify")
     os.makedirs(uncrust_dir_path, exist_ok=True)
@@ -37,8 +38,12 @@ def calculate_impact(
     if ignore_params:
         ignore_params_set = set(ignore_params)
 
-    if randomseed is not None:
-        random.seed(randomseed)
+    consider_params_set = set()
+    if consider_params:
+        consider_params_set = set(consider_params)
+
+    if random_seed is not None:
+        random.seed(random_seed)
 
     with open(base_file_path, encoding="utf-8") as file_1:
         filebase_text = file_1.readlines()
@@ -59,6 +64,10 @@ def calculate_impact(
         if param_name in ignore_params_set:
             # ignore parameter
             continue
+        if consider_params_set:
+            if param_name not in consider_params_set:
+                # ignore parameter
+                continue
 
         curr_cfg = copy.deepcopy(params_base_cfg_dict)
         if modify_cfg(curr_cfg, param_name, param_data) is False:
@@ -81,6 +90,8 @@ def calculate_impact(
         out_diff_path = os.path.join(uncrust_dir_path, diff_filename)
         with open(out_diff_path, "w", encoding="utf-8") as out_file:
             out_file.write(raw_diff)
+
+    # changes.print_diff()
 
     content = print_to_html(changes, label_converter=labels_to_links)
     out_path = os.path.join(output_base_dir_path, "index.html")

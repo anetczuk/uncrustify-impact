@@ -35,7 +35,8 @@ def print_to_html(changes: Changes, label_converter=None) -> str:
 <body>
 """
 
-    changes_list = changes.to_list_raw(removed_as_changed=True)
+    changes_list = changes.to_list_raw(removed_as_changed=True, do_not_repeat=True)
+    # import pprint
     # print("raw list:")
     # pprint.pprint(changes_list, indent=4)
 

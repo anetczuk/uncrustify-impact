@@ -272,7 +272,7 @@ class Changes:
     def to_dict_raw(self):
         return self.file_state.to_dict_raw()
 
-    def to_list_raw(self, removed_as_changed=False):
+    def to_list_raw(self, removed_as_changed=False, do_not_repeat=True):
         changes_dict = self.to_dict_modifiers()
 
         ret_list = []
@@ -289,21 +289,37 @@ class Changes:
             if removed_as_changed is False:
                 changed_files = item.get_modifier_files(LineModifier.CHANGED)
                 if changed_files:
+                    if do_not_repeat:
+                        changed_files = set(changed_files)
+                        changed_files = list(changed_files)
+                    changed_files.sort()
                     ret_list.append((index + 1, line_content, LineModifier.CHANGED, changed_files))
                     appended = True
 
                 removed_files = item.get_modifier_files(LineModifier.REMOVED)
                 if removed_files:
+                    if do_not_repeat:
+                        removed_files = set(removed_files)
+                        removed_files = list(removed_files)
+                    removed_files.sort()
                     ret_list.append((index + 1, line_content, LineModifier.REMOVED, removed_files))
                     appended = True
             else:
                 modified_files = item.get_modified_files()
                 if modified_files:
+                    if do_not_repeat:
+                        modified_files = set(modified_files)
+                        modified_files = list(modified_files)
+                    modified_files.sort()
                     ret_list.append((index + 1, line_content, LineModifier.CHANGED, modified_files))
                     appended = True
 
             added_files = item.get_modifier_files(LineModifier.ADDED)
             if added_files:
+                if do_not_repeat:
+                    added_files = set(added_files)
+                    added_files = list(added_files)
+                added_files.sort()
                 if item.has_modifier(LineModifier.SAME):
                     if not ret_list or ret_list[-1][0] != index + 1:
                         # add "same" if there is no modification of the same line
