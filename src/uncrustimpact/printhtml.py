@@ -11,6 +11,7 @@ import os
 import html
 
 from uncrustimpact.diff import Changes, LineModifier
+from uncrustimpact.cfgparser import ParamType
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -97,18 +98,48 @@ def print_to_html(changes: Changes, label_converter=None, bottom_content=None) -
     return ret_content
 
 
-def print_param_page(param_name, param_prev_value, param_value, diff_filename, output_dir):
+# print_param_page(param_name, param_val_list, param_base_value, uncrust_dir_path)
+def print_param_page(param_name, param_data_list, param_prev_value, param_def, changed_lines, output_dir):
+    value_set_text = ""
+    if param_def["type"] == str(ParamType.SET):
+        allowed_list = sorted(param_def["allowed"])
+        allowed_list = " ".join(allowed_list)
+        value_set_text = f"""<tr> <td>Allowed values:</td>      <td>{allowed_list}</td> </tr>"""
+
     content = f"""\
 <html>
 <head>
 </head>
 <body>
-    <div>Parameter: {param_name}</div>
-    <div>Prev value: {param_prev_value}</div>
-    <div>New value: {param_value}</div>
-    <div><a href="{param_name}.txt">output</a></div>
-    <div><a href="{diff_filename}">diff</a></div>
-    <div><a href="{param_name}.cfg">config</a></div>
+    <table>
+        <tr> <td>Parameter:</td>      <td><b>{param_name}</b></td>  </tr>
+        <tr> <td>Changed lines:</td>  <td>{changed_lines}</td>      </tr>
+        <tr> <td>Type:</td>           <td>{param_def["type"]}</td>  </tr>
+        {value_set_text}
+        <tr> <td>Default value:</td>  <td>{param_def["value"]}</td> </tr>
+        <tr> <td>Prev value:</td>     <td>{param_prev_value}</td>   </tr>
+    </table>
+
+    <table>
+        <tr>
+            <th>New value:</th>
+        </tr>
+"""
+
+    for param_data in param_data_list:
+        param_val = param_data[0]
+        param_id = param_data[1]
+        diff_filename = param_data[2]
+        content += f"""\
+        <tr> \
+<td>{param_val}</td> \
+<td><a href="{param_id}.txt">output</a></td> \
+<td><a href="{diff_filename}">diff</a></td> \
+<td><a href="{param_id}.cfg">config</a></td> \
+</tr>
+"""
+    content += f"""\
+    </table>
 </body>
 </html>
 """

@@ -210,6 +210,7 @@ class FileState:
         #     '  '    line common to both sequences
         #     '? '    line not present in either input sequence
         #
+        changed = False
         self._line_counter = 0
         for line in diff_list:
             if line.startswith("  "):
@@ -220,19 +221,23 @@ class FileState:
             if line.startswith("+ "):
                 # line added
                 self._add_state(file_name, LineModifier.ADDED)
+                changed = True
                 continue
             if line.startswith("- "):
                 # line removed
                 self._line_counter += 1
                 self._add_state(file_name, LineModifier.REMOVED)
+                changed = True
                 continue
             if line.startswith("? "):
                 # line modified
                 # self._line_counter += 1
                 self._add_state(file_name, LineModifier.CHANGED)
+                changed = True
                 continue
             raise RuntimeError("unknown marker")
         self._end_diff()
+        return changed
 
     def _add_state(self, label, modifier):
         if self._line_counter == 0 and modifier == LineModifier.ADDED:
@@ -286,7 +291,7 @@ class Changes:
         #                              tofile='file2.txt',
         #                              n=0)
 
-        self.file_state.parse_diff(file_name, diff_list)
+        return self.file_state.parse_diff(file_name, diff_list)
 
     def to_dict_raw(self):
         return self.file_state.to_dict_raw()

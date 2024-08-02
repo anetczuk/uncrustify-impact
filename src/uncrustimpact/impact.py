@@ -10,7 +10,7 @@
 import os
 import copy
 import json
-import random
+# import random
 
 from uncrustimpact.diff import Changes
 from uncrustimpact.cfgparser import get_default_params_space, read_params_space, write_dict_to_cfg, ParamType
@@ -42,8 +42,8 @@ def calculate_impact(
     if consider_params:
         consider_params_set = set(consider_params)
 
-    if random_seed is not None:
-        random.seed(random_seed)
+    # if random_seed is not None:
+    #     random.seed(random_seed)
 
     with open(base_file_path, encoding="utf-8") as file_1:
         filebase_text = file_1.readlines()
@@ -62,7 +62,7 @@ def calculate_impact(
 
     params_stats = {}
 
-    for param_name, param_data in params_space_dict.items():
+    for param_name, param_def in params_space_dict.items():
         if param_name in ignore_params_set:
             # ignore parameter
             continue
@@ -72,42 +72,54 @@ def calculate_impact(
                 continue
 
         curr_cfg = copy.deepcopy(params_base_cfg_dict)
-        if modify_cfg(curr_cfg, param_name, param_data) is False:
+        param_cfg_dict = curr_cfg.get(param_name)
+        if param_cfg_dict is None:
+            # parameter not used - set default value
+            param_cfg_dict = copy.deepcopy(param_def)
+            curr_cfg[param_name] = param_cfg_dict
+        param_values = generate_param_values(param_cfg_dict, param_def)
+        if not param_values:
             # params not changed -- skip
             continue
 
-        out_cfg_path = os.path.join(uncrust_dir_path, f"{param_name}.cfg")
-        write_dict_to_cfg(curr_cfg, out_cfg_path)
+        param_val_list = []
+        for param_val in param_values:
+            param_id = f"{param_name}-{param_val}"
+            param_cfg_dict["value"] = param_val
 
-        out_file_path = os.path.join(uncrust_dir_path, f"{param_name}.txt")
-        execute_uncrustify(base_file_path, out_cfg_path, out_file_path)
+            out_cfg_path = os.path.join(uncrust_dir_path, f"{param_id}.cfg")
+            write_dict_to_cfg(curr_cfg, out_cfg_path)
 
-        with open(out_file_path, encoding="utf-8") as item_file:
-            item_text = item_file.readlines()
-        changes.add_diff(param_name, item_text)
+            out_file_path = os.path.join(uncrust_dir_path, f"{param_id}.txt")
+            execute_uncrustify(base_file_path, out_cfg_path, out_file_path)
+
+            with open(out_file_path, encoding="utf-8") as item_file:
+                item_text = item_file.readlines()
+            changed = changes.add_diff(param_name, item_text)
+
+            if not changed:
+                # remove unused files
+                os.remove(out_cfg_path)
+                os.remove(out_file_path)
+                continue
+
+            # write files diff to file
+            raw_diff = changes.calculate_diff(item_text)
+            raw_diff = "".join(raw_diff)
+            diff_filename = name_to_diff_filename(param_id)
+            out_diff_path = os.path.join(uncrust_dir_path, diff_filename)
+            with open(out_diff_path, "w", encoding="utf-8") as out_file:
+                out_file.write(raw_diff)
+
+            param_val_list.append((param_val, param_id, diff_filename))
 
         param_changes = changes.count_changes(param_name)
         params_stats[param_name] = param_changes
-        if param_changes < 1:
-            # remove unused files
-            os.remove(out_cfg_path)
-            os.remove(out_file_path)
-            continue
-
-        # write files diff to file
-        raw_diff = changes.calculate_diff(item_text)
-        raw_diff = "".join(raw_diff)
-        diff_filename = name_to_diff_filename(param_name)
-        out_diff_path = os.path.join(uncrust_dir_path, diff_filename)
-        with open(out_diff_path, "w", encoding="utf-8") as out_file:
-            out_file.write(raw_diff)
 
         # write parameter page
         param_base_cfg_dict = params_base_cfg_dict.get(param_name)
         param_base_value = param_base_cfg_dict["value"]
-        param_cfg_dict = curr_cfg.get(param_name)
-        param_value = param_cfg_dict["value"]
-        print_param_page(param_name, param_base_value, param_value, diff_filename, uncrust_dir_path)
+        print_param_page(param_name, param_val_list, param_base_value, param_def, param_changes, uncrust_dir_path)
 
     # changes.print_diff()
 
@@ -121,38 +133,31 @@ def calculate_impact(
         out_file.write(content)
 
 
-def modify_cfg(cfg_dict, param_name, param_def_dict):
-    param_cfg_dict = cfg_dict.get(param_name)
-    if param_cfg_dict is None:
-        return False
+def generate_param_values(param_cfg_dict, param_def_dict):
     # pprint.pprint(param_def_dict, indent=4, sort_dicts=False)
     param_type = param_def_dict["type"]
     if param_type == str(ParamType.STRING):
-        return False
+        return None
     if param_type == str(ParamType.INTEGER):
         value_str = param_cfg_dict["value"]
         value = int(value_str)
         value += 1
-        param_cfg_dict["value"] = str(value)
-        return True
+        return [str(value)]
     if param_type == str(ParamType.UNSIGNED):
         value_str = param_cfg_dict["value"]
         value = int(value_str)
         value += 1
-        param_cfg_dict["value"] = str(value)
-        return True
+        return [str(value)]
     if param_type == str(ParamType.SET):
         allowed_values = param_def_dict["allowed"]
         if not allowed_values:
-            raise RuntimeError(f"invalid 'allowed' value for parameter definition: {param_name}")
+            raise RuntimeError(f"invalid 'allowed' value for parameter definition")
         value_str = param_cfg_dict["value"]
-        allowed_values.remove(value_str)
-        if not allowed_values:
-            return False
-        new_value = random.sample(allowed_values, 1)
-        new_value = new_value[0]
-        param_cfg_dict["value"] = str(new_value)
-        return True
+        allowed_list = copy.deepcopy(allowed_values)
+        allowed_list.remove(value_str)
+        if not allowed_list:
+            return None
+        return list(allowed_list)
     raise RuntimeError(f"unahandled param type: {param_type}")
 
 
