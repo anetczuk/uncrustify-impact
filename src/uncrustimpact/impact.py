@@ -14,7 +14,7 @@ import random
 
 from uncrustimpact.diff import Changes
 from uncrustimpact.cfgparser import get_default_params_space, read_params_space, write_dict_to_cfg, ParamType
-from uncrustimpact.printhtml import print_to_html
+from uncrustimpact.printhtml import print_to_html, print_param_page
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -91,6 +91,10 @@ def calculate_impact(
         with open(out_diff_path, "w", encoding="utf-8") as out_file:
             out_file.write(raw_diff)
 
+        param_cfg_dict = curr_cfg.get(param_name)
+        param_value = param_cfg_dict["value"]
+        print_param_page(param_name, param_value, diff_filename, uncrust_dir_path)
+
     # changes.print_diff()
 
     content = print_to_html(changes, label_converter=labels_to_links)
@@ -139,8 +143,7 @@ def labels_to_links(labels_list):
         return labels_list
     links_list = []
     for item in labels_list:
-        diff_filename = name_to_diff_filename(item)
-        link = f"""<a href="./uncrustify/{diff_filename}">{item}</a>"""
+        link = f"""<a href="./uncrustify/{item}.html">{item}</a>"""
         links_list.append(link)
     return links_list
 

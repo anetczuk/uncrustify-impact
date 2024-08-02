@@ -90,3 +90,22 @@ def print_to_html(changes: Changes, label_converter=None) -> str:
 
     ret_content += "</body></html>\n"
     return ret_content
+
+
+def print_param_page(param_name, param_value, diff_filename, output_dir):
+    content = f"""\
+<html>
+<head>
+</head>
+<body>
+    <div>Parameter: {param_name}</div>
+    <div>Value: {param_value}</div>
+    <div><a href="{param_name}.txt">output</a></div>
+    <div><a href="{diff_filename}">diff</a></div>
+    <div><a href="{param_name}.cfg">config</a></div>
+</body>
+</html>
+"""
+    out_path = os.path.join(output_dir, f"{param_name}.html")
+    with open(out_path, "w", encoding="utf-8") as out_file:
+        out_file.write(content)
