@@ -109,7 +109,7 @@ def calculate_impact(
 
     # changes.print_diff()
 
-    params_stats = {k: v for k, v in sorted(params_stats.items(), key=lambda item: item[1], reverse=True)}
+    params_stats = {k: v for k, v in sorted(params_stats.items(), key=lambda item: (-item[1], item[0]))}
     bottom_content = generate_params_stats(params_stats, label_to_link=label_to_link)
 
     # write general diff
