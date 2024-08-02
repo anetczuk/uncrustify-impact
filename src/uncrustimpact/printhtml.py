@@ -34,6 +34,7 @@ def print_to_html(changes: Changes, label_converter=None, bottom_content=None) -
     </style>
 </head>
 <body>
+<div>File impact:</div>
 """
 
     changes_list = changes.to_list_raw(removed_as_changed=True, do_not_repeat=True)
@@ -96,14 +97,15 @@ def print_to_html(changes: Changes, label_converter=None, bottom_content=None) -
     return ret_content
 
 
-def print_param_page(param_name, param_value, diff_filename, output_dir):
+def print_param_page(param_name, param_prev_value, param_value, diff_filename, output_dir):
     content = f"""\
 <html>
 <head>
 </head>
 <body>
     <div>Parameter: {param_name}</div>
-    <div>Value: {param_value}</div>
+    <div>Prev value: {param_prev_value}</div>
+    <div>New value: {param_value}</div>
     <div><a href="{param_name}.txt">output</a></div>
     <div><a href="{diff_filename}">diff</a></div>
     <div><a href="{param_name}.cfg">config</a></div>

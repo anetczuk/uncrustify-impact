@@ -103,9 +103,11 @@ def calculate_impact(
             out_file.write(raw_diff)
 
         # write parameter page
+        param_base_cfg_dict = params_base_cfg_dict.get(param_name)
+        param_base_value = param_base_cfg_dict["value"]
         param_cfg_dict = curr_cfg.get(param_name)
         param_value = param_cfg_dict["value"]
-        print_param_page(param_name, param_value, diff_filename, uncrust_dir_path)
+        print_param_page(param_name, param_base_value, param_value, diff_filename, uncrust_dir_path)
 
     # changes.print_diff()
 
