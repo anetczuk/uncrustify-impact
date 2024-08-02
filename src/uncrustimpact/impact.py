@@ -10,6 +10,7 @@
 import os
 import copy
 import json
+
 # import random
 
 from uncrustimpact.diff import Changes
@@ -27,8 +28,12 @@ def execute_uncrustify(input_file_path, base_config_path, out_file_path):
 
 
 def calculate_impact(
-    base_file_path, base_config_path, output_base_dir_path, params_space_path=None,
-    ignore_params=None, consider_params=None, random_seed=None
+    base_file_path,
+    base_config_path,
+    output_base_dir_path,
+    params_space_path=None,
+    ignore_params=None,
+    consider_params=None,
 ):
     uncrust_dir_path = os.path.join(output_base_dir_path, "uncrustify")
     os.makedirs(uncrust_dir_path, exist_ok=True)
@@ -123,7 +128,7 @@ def calculate_impact(
 
     # changes.print_diff()
 
-    params_stats = {k: v for k, v in sorted(params_stats.items(), key=lambda item: (-item[1], item[0]))}
+    params_stats = dict(sorted(params_stats.items(), key=lambda item: (-item[1], item[0])))
     bottom_content = generate_params_stats(params_stats, label_to_link=label_to_link)
 
     # write general diff
@@ -151,7 +156,7 @@ def generate_param_values(param_cfg_dict, param_def_dict):
     if param_type == str(ParamType.SET):
         allowed_values = param_def_dict["allowed"]
         if not allowed_values:
-            raise RuntimeError(f"invalid 'allowed' value for parameter definition")
+            raise RuntimeError("invalid 'allowed' value for parameter definition")
         value_str = param_cfg_dict["value"]
         allowed_list = copy.deepcopy(allowed_values)
         allowed_list.remove(value_str)

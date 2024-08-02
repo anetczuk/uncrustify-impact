@@ -36,7 +36,7 @@ optional arguments:
 ```
 usage: __main__.py impact [-h] -f FILE -c CONFIG -od OUTPUTDIR
                           [-ip IGNOREPARAMS [IGNOREPARAMS ...]]
-                          [--randomseed RANDOMSEED]
+                          [-cp CONSIDERPARAMS [CONSIDERPARAMS ...]]
 
 calculate config impact
 
@@ -49,6 +49,6 @@ optional arguments:
                         Output directory
   -ip IGNOREPARAMS [IGNOREPARAMS ...], --ignoreparams IGNOREPARAMS [IGNOREPARAMS ...]
                         Parameters list to ignore
-  --randomseed RANDOMSEED
-                        Seed for random number generator
+  -cp CONSIDERPARAMS [CONSIDERPARAMS ...], --considerparams CONSIDERPARAMS [CONSIDERPARAMS ...]
+                        Parameters list to consider
 ```

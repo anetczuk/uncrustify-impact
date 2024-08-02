@@ -34,10 +34,12 @@ def calculate_impact_tool(args):
     output_dir_path = args.outputdir
     ignore_params = args.ignoreparams
     consider_params = args.considerparams
-    random_seed = args.randomseed
     calculate_impact(
-        input_file_path, input_config_path, output_dir_path, ignore_params=ignore_params,
-        consider_params=consider_params, random_seed=random_seed
+        input_file_path,
+        input_config_path,
+        output_dir_path,
+        ignore_params=ignore_params,
+        consider_params=consider_params,
     )
 
 
@@ -70,7 +72,6 @@ def main():
     subparser.add_argument("-od", "--outputdir", action="store", required=True, help="Output directory")
     subparser.add_argument("-ip", "--ignoreparams", nargs="+", default=[], help="Parameters list to ignore")
     subparser.add_argument("-cp", "--considerparams", nargs="+", default=[], help="Parameters list to consider")
-    subparser.add_argument("--randomseed", action="store", default=None, help="Seed for random number generator")
 
     ## =================================================
 

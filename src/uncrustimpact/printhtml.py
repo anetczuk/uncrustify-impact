@@ -138,7 +138,7 @@ def print_param_page(param_name, param_data_list, param_prev_value, param_def, c
 <td><a href="{param_id}.cfg">config</a></td> \
 </tr>
 """
-    content += f"""\
+    content += """\
     </table>
 </body>
 </html>
