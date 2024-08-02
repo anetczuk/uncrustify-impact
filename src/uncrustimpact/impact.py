@@ -84,6 +84,13 @@ def calculate_impact(
             item_text = item_file.readlines()
         changes.add_diff(param_name, item_text)
 
+        param_changes = changes.count_changes(param_name)
+        if param_changes < 1:
+            # remove unused files
+            os.remove(out_cfg_path)
+            os.remove(out_file_path)
+            continue
+
         raw_diff = changes.calculate_diff(item_text)
         raw_diff = "".join(raw_diff)
         diff_filename = name_to_diff_filename(param_name)

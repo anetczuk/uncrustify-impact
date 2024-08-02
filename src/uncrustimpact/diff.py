@@ -76,6 +76,16 @@ class LineModifiers:
                 return True
         return False
 
+    def count_changes(self, label):
+        state_set = set()
+        for item in self.modifiers:
+            if item.file_name != label:
+                continue
+            if item.state == LineModifier.SAME:
+                continue
+            state_set.add(item.state)
+        return len(state_set)
+
     def get_modifier_files(self, modifier: LineModifier) -> List[str]:
         ret_list = []
         for item in self.modifiers:
@@ -90,8 +100,8 @@ class LineModifiers:
                 ret_list.append(item.file_name)
         return ret_list
 
-    def add_state(self, file_name, modifier: LineModifier):
-        self.modifiers.append(LineState(file_name, modifier))
+    def add_state(self, label, modifier: LineModifier):
+        self.modifiers.append(LineState(label, modifier))
 
     def to_list_raw(self):
         ret_list = []
@@ -170,6 +180,12 @@ class FileState:
         self._modify_stream = ModifyStream()
         self._line_counter = -1
 
+    def count_changes(self, label):
+        counted = self.before.count_changes(label)
+        for item in self.line_state:
+            counted += item.count_changes(label)
+        return counted
+
     def to_dict_raw(self):
         ret_dict = {}
         ret_dict[-1] = self.before.to_list_raw()
@@ -218,10 +234,10 @@ class FileState:
             raise RuntimeError("unknown marker")
         self._end_diff()
 
-    def _add_state(self, file_name, modifier):
+    def _add_state(self, label, modifier):
         if self._line_counter == 0 and modifier == LineModifier.ADDED:
             line_state: LineModifiers = self._get_modifier_item(self._line_counter)
-            line_state.add_state(file_name, modifier)
+            line_state.add_state(label, modifier)
             return
 
         modify_list = self._modify_stream.add(self._line_counter, modifier)
@@ -229,7 +245,7 @@ class FileState:
             item_line = item[0]
             item_modify = item[1]
             line_state: LineModifiers = self._get_modifier_item(item_line)
-            line_state.add_state(file_name, item_modify)
+            line_state.add_state(label, item_modify)
             self._line_counter = item_line
 
     def _end_diff(self):
@@ -250,6 +266,9 @@ class Changes:
 
     def get_content_line(self, line_index):
         return self.base_lines[line_index]
+
+    def count_changes(self, label):
+        return self.file_state.count_changes(label)
 
     def add_diff(self, file_name, content_lines):
         ## checks whole file
