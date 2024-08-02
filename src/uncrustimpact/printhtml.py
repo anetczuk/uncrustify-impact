@@ -16,11 +16,12 @@ from uncrustimpact.diff import Changes, LineModifier
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def print_to_html(changes: Changes, label_converter=None) -> str:
+def print_to_html(changes: Changes, label_converter=None, bottom_content=None) -> str:
     ret_content = """\
 <html>
 <head>
     <style>
+        table { padding: 6px; }
         table pre { margin: 0; }
 
         .codediff { background-color: #abb2b9; }
@@ -88,6 +89,9 @@ def print_to_html(changes: Changes, label_converter=None) -> str:
 
     ret_content += "</table>\n"
 
+    if bottom_content:
+        ret_content += f"{bottom_content}\n"
+
     ret_content += "</body></html>\n"
     return ret_content
 
@@ -109,3 +113,20 @@ def print_param_page(param_name, param_value, diff_filename, output_dir):
     out_path = os.path.join(output_dir, f"{param_name}.html")
     with open(out_path, "w", encoding="utf-8") as out_file:
         out_file.write(content)
+
+
+def generate_params_stats(params_stats_dict, label_to_link=None):
+    ret_content = """<div style="margin-top: 24px;">Parameters impact:</div>"""
+    ret_content += """<table>\n"""
+
+    for param_name, param_count in params_stats_dict.items():
+        label = param_name
+        if label_to_link:
+            label = label_to_link(param_name)
+        ret_content += f"""<tr>\
+<td>{label}</td> \
+<td>{param_count}</td> \
+</tr>\n"""
+
+    ret_content += "</table>\n"
+    return ret_content

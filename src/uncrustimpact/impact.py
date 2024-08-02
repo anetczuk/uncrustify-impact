@@ -14,7 +14,7 @@ import random
 
 from uncrustimpact.diff import Changes
 from uncrustimpact.cfgparser import get_default_params_space, read_params_space, write_dict_to_cfg, ParamType
-from uncrustimpact.printhtml import print_to_html, print_param_page
+from uncrustimpact.printhtml import print_to_html, print_param_page, generate_params_stats
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -60,6 +60,8 @@ def calculate_impact(
     else:
         params_space_dict = get_default_params_space()
 
+    params_stats = {}
+
     for param_name, param_data in params_space_dict.items():
         if param_name in ignore_params_set:
             # ignore parameter
@@ -85,12 +87,14 @@ def calculate_impact(
         changes.add_diff(param_name, item_text)
 
         param_changes = changes.count_changes(param_name)
+        params_stats[param_name] = param_changes
         if param_changes < 1:
             # remove unused files
             os.remove(out_cfg_path)
             os.remove(out_file_path)
             continue
 
+        # write files diff to file
         raw_diff = changes.calculate_diff(item_text)
         raw_diff = "".join(raw_diff)
         diff_filename = name_to_diff_filename(param_name)
@@ -98,13 +102,18 @@ def calculate_impact(
         with open(out_diff_path, "w", encoding="utf-8") as out_file:
             out_file.write(raw_diff)
 
+        # write parameter page
         param_cfg_dict = curr_cfg.get(param_name)
         param_value = param_cfg_dict["value"]
         print_param_page(param_name, param_value, diff_filename, uncrust_dir_path)
 
     # changes.print_diff()
 
-    content = print_to_html(changes, label_converter=labels_to_links)
+    params_stats = {k: v for k, v in sorted(params_stats.items(), key=lambda item: item[1], reverse=True)}
+    bottom_content = generate_params_stats(params_stats, label_to_link=label_to_link)
+
+    # write general diff
+    content = print_to_html(changes, label_converter=labels_to_links, bottom_content=bottom_content)
     out_path = os.path.join(output_base_dir_path, "index.html")
     with open(out_path, "w", encoding="utf-8") as out_file:
         out_file.write(content)
@@ -150,9 +159,13 @@ def labels_to_links(labels_list):
         return labels_list
     links_list = []
     for item in labels_list:
-        link = f"""<a href="./uncrustify/{item}.html">{item}</a>"""
+        link = label_to_link(item)
         links_list.append(link)
     return links_list
+
+
+def label_to_link(label):
+    return f"""<a href="./uncrustify/{label}.html">{label}</a>"""
 
 
 def name_to_diff_filename(name):
