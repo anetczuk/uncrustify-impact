@@ -149,17 +149,22 @@ def print_param_page(param_name, param_data_list, param_prev_value, param_def, c
 
 
 def generate_params_stats(params_stats_dict, label_to_link=None):
-    ret_content = """<div style="margin-top: 24px;">Parameters impact:</div>"""
-    ret_content += """<table>\n"""
+    ret_content = """\
+<div style="margin-top: 24px;">Parameters impact:</div>
+<table>
+    <tr style="text-align: left;"> <th>Parameter:</th> <th>Lines changed:</th> </tr>
+"""
 
     for param_name, param_count in params_stats_dict.items():
         label = param_name
         if label_to_link:
             label = label_to_link(param_name)
-        ret_content += f"""<tr>\
+        ret_content += f"""    \
+<tr>\
 <td>{label}</td> \
 <td>{param_count}</td> \
-</tr>\n"""
+</tr>
+"""
 
     ret_content += "</table>\n"
     return ret_content

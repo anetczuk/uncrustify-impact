@@ -26,9 +26,11 @@ _LOGGER = logging.getLogger(__name__)
 
 def gen_params_space_dict_tool(_args):
     print_params_space()
+    _LOGGER.info("Completed")
 
 
 def calculate_impact_tool(args):
+    _LOGGER.info("Starting impact calculation")
     input_file_path = args.file
     input_config_path = args.config
     output_dir_path = args.outputdir
@@ -41,6 +43,7 @@ def calculate_impact_tool(args):
         ignore_params=ignore_params,
         consider_params=consider_params,
     )
+    _LOGGER.info("Completed")
 
 
 # =============================================================
@@ -57,7 +60,7 @@ def main():
     ## =================================================
 
     description = "generate parameters space dict"
-    subparser = subparsers.add_parser("genparamsdict", help=description)
+    subparser = subparsers.add_parser("genparamsspace", help=description)
     subparser.description = description
     subparser.set_defaults(func=gen_params_space_dict_tool)
 
@@ -95,8 +98,6 @@ def main():
         return 1
 
     args.func(args)
-
-    _LOGGER.info("Completed")
     return 0
 
 

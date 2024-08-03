@@ -1,6 +1,6 @@
 ## <a name="main_help"></a> python3 -m uncrustimpact --help
 ```
-usage: __main__.py [-h] [-la] [--listtools] {genparamsdict,impact} ...
+usage: __main__.py [-h] [-la] [--listtools] {genparamsspace,impact} ...
 
 uncrustify-impact
 
@@ -12,17 +12,17 @@ optional arguments:
 subcommands:
   use one of tools
 
-  {genparamsdict,impact}
+  {genparamsspace,impact}
                         one of tools
-    genparamsdict       generate parameters space dict
+    genparamsspace      generate parameters space dict
     impact              calculate config impact
 ```
 
 
 
-## <a name="genparamsdict_help"></a> python3 -m uncrustimpact genparamsdict --help
+## <a name="genparamsspace_help"></a> python3 -m uncrustimpact genparamsspace --help
 ```
-usage: __main__.py genparamsdict [-h]
+usage: __main__.py genparamsspace [-h]
 
 generate parameters space dict
 
