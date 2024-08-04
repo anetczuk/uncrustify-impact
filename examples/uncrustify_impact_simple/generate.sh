@@ -35,8 +35,14 @@ python3 -m uncrustimpact impact --file $SCRIPT_DIR/example.cpp \
 ## generate image from html
 if [ -f "$OUT_DIR/index.html" ]; then
     cutycapt --url=file://$OUT_DIR/index.html --out=$OUT_DIR/index.png
+    convert "$OUT_DIR/index.png" -strip -trim "$OUT_DIR/index.png"
 fi
 
 if [ -f "$OUT_DIR/uncrustify/cmt_cpp_to_c.html" ]; then
     cutycapt --url=file://$OUT_DIR/uncrustify/cmt_cpp_to_c.html --out=$OUT_DIR/cmt_cpp_to_c.png
+    convert "$OUT_DIR/cmt_cpp_to_c.png" -strip -trim "$OUT_DIR/cmt_cpp_to_c.png"
 fi
+
+
+## generate small images
+$SCRIPT_DIR/../generate_small.sh

@@ -16,14 +16,17 @@ Application generates various files:
 - config file for each change
 
 
-Example of main page with summary:
+Example of main page with summary is presented below. Rows with dark gray background present no changes, rows with gray color 
+show modifications (lines changed or removed) and light gray rows show added lines. Column on right contains names of parameters  
+that introduced the change. Bellow the difference view there is sorted table with parameter names and number of caused 
+changes in source file.
 
 [![simple index example](examples/uncrustify_impact_simple/impact/index-small.png "simple index example")](examples/uncrustify_impact_simple/impact/index.png)
 
 
-Example of parameter page:
+Example of parameter page with some information.
 
-[![simple parameter example](examples/uncrustify_impact_simple/impact/cmt_cpp_to_c-small.png "simple parameter example")](examples/uncrustify_impact_simple/impact/cmt_cpp_to_c.png)
+[![simple parameter example](examples/uncrustify_impact_simple/impact/cmt_cpp_to_c.png "simple parameter example")](examples/uncrustify_impact_simple/impact/cmt_cpp_to_c.png)
 
 
 ## Running application
