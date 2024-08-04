@@ -14,7 +14,10 @@ rm -fr "$OUT_DIR"
 
 uncrustify -c $SCRIPT_DIR/override.cfg --update-config-with-doc > $SCRIPT_DIR/config.cfg
 
-$SCRIPT_DIR/../../src/uncrustifyimpact.py impact --file $SCRIPT_DIR/example.cpp \
-												 --config $SCRIPT_DIR/config.cfg \
-												 --outputdir $OUT_DIR \
-												 --ignoreparams code_width cmt_width indent_columns
+
+cd $SCRIPT_DIR/../../src/
+
+python3 -m uncrustimpact impact --file $SCRIPT_DIR/example.cpp \
+								--config $SCRIPT_DIR/config.cfg \
+								--outputdir $OUT_DIR \
+								--ignoreparams code_width cmt_width indent_columns
