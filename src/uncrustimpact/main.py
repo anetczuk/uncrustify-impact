@@ -34,12 +34,16 @@ def calculate_impact_tool(args):
     input_file_path = args.file
     input_config_path = args.config
     output_dir_path = args.outputdir
+    params_space_path = args.paramsspace
+    override_def_params_space = args.overridedefparamsspace
     ignore_params = args.ignoreparams
     consider_params = args.considerparams
     calculate_impact(
         input_file_path,
         input_config_path,
         output_dir_path,
+        params_space_path=params_space_path,
+        override_def_params_space=override_def_params_space,
         ignore_params=ignore_params,
         consider_params=consider_params,
     )
@@ -73,6 +77,8 @@ def main():
     subparser.add_argument("-f", "--file", action="store", required=True, help="File to analyze")
     subparser.add_argument("-c", "--config", action="store", required=True, help="Base uncrustify config")
     subparser.add_argument("-od", "--outputdir", action="store", required=True, help="Output directory")
+    subparser.add_argument("-ps", "--paramsspace", action="store", help="Path to params space config JSON")
+    subparser.add_argument("-odps", "--overridedefparamsspace", action="store_true", help="Override default params space with given one")
     subparser.add_argument("-ip", "--ignoreparams", nargs="+", default=[], help="Parameters list to ignore")
     subparser.add_argument("-cp", "--considerparams", nargs="+", default=[], help="Parameters list to consider")
 

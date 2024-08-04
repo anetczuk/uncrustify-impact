@@ -8,6 +8,7 @@
 #
 
 import os
+import logging
 import copy
 import json
 
@@ -19,6 +20,8 @@ from uncrustimpact.printhtml import print_to_html, print_param_page, generate_pa
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def execute_uncrustify(input_file_path, base_config_path, out_file_path):
@@ -32,6 +35,7 @@ def calculate_impact(
     base_config_path,
     output_base_dir_path,
     params_space_path=None,
+    override_def_params_space=False,
     ignore_params=None,
     consider_params=None,
 ):
@@ -60,9 +64,14 @@ def calculate_impact(
 
     params_space_dict = None
     if params_space_path:
+        _LOGGER.info("using params space from file: %s", params_space_path)
         with open(params_space_path, encoding="utf-8") as space_file:
             params_space_dict = json.load(space_file)
+            if override_def_params_space:
+                def_space_dict = get_default_params_space()
+                params_space_dict = {**def_space_dict, **params_space_dict}
     else:
+        _LOGGER.info("using default params space")
         params_space_dict = get_default_params_space()
 
     params_stats = {}
@@ -136,6 +145,8 @@ def calculate_impact(
     out_path = os.path.join(output_base_dir_path, "index.html")
     with open(out_path, "w", encoding="utf-8") as out_file:
         out_file.write(content)
+        
+    _LOGGER.info("output stored to: file://%s", out_path)
 
 
 def generate_param_values(param_cfg_dict, param_def_dict):
@@ -159,7 +170,8 @@ def generate_param_values(param_cfg_dict, param_def_dict):
             raise RuntimeError("invalid 'allowed' value for parameter definition")
         value_str = param_cfg_dict["value"]
         allowed_list = copy.deepcopy(allowed_values)
-        allowed_list.remove(value_str)
+        if value_str in allowed_list:
+            allowed_list.remove(value_str)
         if not allowed_list:
             return None
         return list(allowed_list)
