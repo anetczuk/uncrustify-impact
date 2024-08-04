@@ -9,6 +9,16 @@
         <tr> <td>Allowed values:</td>      <td>false true</td> </tr>
         <tr> <td>Default value:</td>  <td>true</td> </tr>
         <tr> <td>Prev value:</td>     <td>true</td>   </tr>
+        <tr> <td>Doc:</td>            <td><pre># Whether to apply special formatting for Qt SIGNAL/SLOT macros. Essentially,
+# this tries to format these so that they match Qt's normalized form (i.e. the
+# result of QMetaObject::normalizedSignature), which can slightly improve the
+# performance of the QObject::connect call, rather than how they would
+# otherwise be formatted.
+#
+# See options_for_QT.cpp for details.
+#
+# Default: true
+</pre></td>   </tr>
     </table>
 
     <table>

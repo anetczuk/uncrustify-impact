@@ -44,13 +44,17 @@ def read_params_space(cfg_path):
 
     all_params_dict = {}
 
+    recent_comments = ""
+
     for line in lines_list:
         line = line.strip()
         if not line:
             # empty line
+            recent_comments = ""
             continue
         if line.startswith("#"):
             # comment line
+            recent_comments += line + "\n"
             continue
         name_val = line.split("=")
         name = name_val[0]
@@ -77,8 +81,16 @@ def read_params_space(cfg_path):
         else:
             raise RuntimeError(f"unknown type: {comment} example value: {value}")
 
-        param_dict = {"value": value, "type": str(param_type), "allowed": allowed_set, "line": line}
+        param_dict = {
+            "value": value,
+            "type": str(param_type),
+            "allowed": allowed_set,
+            "doc": recent_comments,
+            "line": line,
+        }
         all_params_dict[name] = param_dict
+
+        recent_comments = ""
 
     return all_params_dict
 

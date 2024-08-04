@@ -108,6 +108,10 @@ def print_param_page(param_name, param_data_list, param_prev_value, param_def, c
         allowed_list = " ".join(allowed_list)
         value_set_text = f"""<tr> <td>Allowed values:</td>      <td>{allowed_list}</td> </tr>"""
 
+    param_doc_text = ""
+    if "doc" in param_def:
+        param_doc_text = f"""<tr> <td>Doc:</td>            <td><pre>{param_def["doc"]}</pre></td>   </tr>"""
+
     content = f"""\
 <html>
 <head>
@@ -120,6 +124,7 @@ def print_param_page(param_name, param_data_list, param_prev_value, param_def, c
         {value_set_text}
         <tr> <td>Default value:</td>  <td>{param_def["value"]}</td> </tr>
         <tr> <td>Prev value:</td>     <td>{param_prev_value}</td>   </tr>
+        {param_doc_text}
     </table>
 
     <table>

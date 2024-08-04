@@ -9,6 +9,13 @@
         
         <tr> <td>Default value:</td>  <td>0</td> </tr>
         <tr> <td>Prev value:</td>     <td>0</td>   </tr>
+        <tr> <td>Doc:</td>            <td><pre># How to consider (or treat) the '*' in the alignment of variable definitions.
+#
+# 0: Part of the type     'void *   foo;' (default)
+# 1: Part of the variable 'void     *foo;'
+# 2: Dangling             'void    *foo;'
+# Dangling: the '*' will not be taken into account when aligning.
+</pre></td>   </tr>
     </table>
 
     <table>

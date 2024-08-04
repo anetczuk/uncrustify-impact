@@ -9,6 +9,21 @@
         <tr> <td>Allowed values:</td>      <td>false true</td> </tr>
         <tr> <td>Default value:</td>  <td>false</td> </tr>
         <tr> <td>Prev value:</td>     <td>false</td>   </tr>
+        <tr> <td>Doc:</td>            <td><pre># The value of the indentation for a continuation line is calculated
+# differently if the statement is:
+# - a declaration: your case with QString fileName ...
+# - an assignment: your case with pSettings = new QSettings( ...
+#
+# At the second case the indentation value might be used twice:
+# - at the assignment
+# - at the function call (if present)
+#
+# To prevent the double use of the indentation value, use this option with the
+# value 'true'.
+#
+# true:  indent_continue will be used only once
+# false: indent_continue will be used every time (default)
+</pre></td>   </tr>
     </table>
 
     <table>
