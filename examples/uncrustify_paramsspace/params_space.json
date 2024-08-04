@@ -1,0 +1,8 @@
+{
+    "code_width": {
+        "value": "0",
+        "type": "ParamType.SET",
+        "allowed": ["0", "40", "80"],
+        "line": "code_width                      = 0        # unsigned number"
+    }
+}

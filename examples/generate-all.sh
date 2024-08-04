@@ -12,3 +12,5 @@ $SCRIPT_DIR/cpp_diff/calculate.py
 $SCRIPT_DIR/uncrustify_cfg/generate.sh
 
 $SCRIPT_DIR/uncrustify_impact/generate.sh
+
+$SCRIPT_DIR/uncrustify_paramsspace/generate.sh
