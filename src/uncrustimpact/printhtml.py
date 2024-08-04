@@ -25,6 +25,8 @@ def print_to_html(changes: Changes, label_converter=None, bottom_content=None) -
         table { padding: 6px; }
         table pre { margin: 0; }
 
+        .section { margin-top: 24px; font-weight: bold; }
+
         .codediff { background-color: #abb2b9; }
         .codediff .added { background-color: #eaecee; }
         .codediff .changed { background-color: #d5d8dc; }
@@ -35,7 +37,7 @@ def print_to_html(changes: Changes, label_converter=None, bottom_content=None) -
     </style>
 </head>
 <body>
-<div>File impact:</div>
+<div class="section">File impact:</div>
 """
 
     changes_list = changes.to_list_raw(removed_as_changed=True, do_not_repeat=True)
@@ -150,7 +152,7 @@ def print_param_page(param_name, param_data_list, param_prev_value, param_def, c
 
 def generate_params_stats(params_stats_dict, label_to_link=None):
     ret_content = """\
-<div style="margin-top: 24px;">Parameters impact:</div>
+<div class="section">Parameters impact:</div>
 <table>
     <tr style="text-align: left;"> <th>Parameter:</th> <th>Lines changed:</th> </tr>
 """
@@ -167,4 +169,20 @@ def generate_params_stats(params_stats_dict, label_to_link=None):
 """
 
     ret_content += "</table>\n"
+
+    impact_list = sorted([par_name for par_name, par_impact in params_stats_dict.items() if par_impact > 0])
+    zero_list = sorted([par_name for par_name, par_impact in params_stats_dict.items() if par_impact == 0])
+
+    impact_list = " ".join(impact_list)
+    zero_list = " ".join(zero_list)
+
+    ret_content += f"""\
+
+    <div class="section">Parameters with impact:</div>
+    <div>{impact_list}</div>
+
+    <div class="section">Parameters without impact:</div>
+    <div>{zero_list}</div>
+"""
+
     return ret_content

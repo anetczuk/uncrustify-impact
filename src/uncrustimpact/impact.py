@@ -145,7 +145,7 @@ def calculate_impact(
     out_path = os.path.join(output_base_dir_path, "index.html")
     with open(out_path, "w", encoding="utf-8") as out_file:
         out_file.write(content)
-        
+
     _LOGGER.info("output stored to: file://%s", out_path)
 
 

@@ -78,7 +78,9 @@ def main():
     subparser.add_argument("-c", "--config", action="store", required=True, help="Base uncrustify config")
     subparser.add_argument("-od", "--outputdir", action="store", required=True, help="Output directory")
     subparser.add_argument("-ps", "--paramsspace", action="store", help="Path to params space config JSON")
-    subparser.add_argument("-odps", "--overridedefparamsspace", action="store_true", help="Override default params space with given one")
+    subparser.add_argument(
+        "-odps", "--overridedefparamsspace", action="store_true", help="Override default params space with given one"
+    )
     subparser.add_argument("-ip", "--ignoreparams", nargs="+", default=[], help="Parameters list to ignore")
     subparser.add_argument("-cp", "--considerparams", nargs="+", default=[], help="Parameters list to consider")
 

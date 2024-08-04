@@ -35,6 +35,7 @@ optional arguments:
 ## <a name="impact_help"></a> python3 -m uncrustimpact impact --help
 ```
 usage: __main__.py impact [-h] -f FILE -c CONFIG -od OUTPUTDIR
+                          [-ps PARAMSSPACE] [-odps]
                           [-ip IGNOREPARAMS [IGNOREPARAMS ...]]
                           [-cp CONSIDERPARAMS [CONSIDERPARAMS ...]]
 
@@ -47,6 +48,10 @@ optional arguments:
                         Base uncrustify config
   -od OUTPUTDIR, --outputdir OUTPUTDIR
                         Output directory
+  -ps PARAMSSPACE, --paramsspace PARAMSSPACE
+                        Path to params space config JSON
+  -odps, --overridedefparamsspace
+                        Override default params space with given one
   -ip IGNOREPARAMS [IGNOREPARAMS ...], --ignoreparams IGNOREPARAMS [IGNOREPARAMS ...]
                         Parameters list to ignore
   -cp CONSIDERPARAMS [CONSIDERPARAMS ...], --considerparams CONSIDERPARAMS [CONSIDERPARAMS ...]
