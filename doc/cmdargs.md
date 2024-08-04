@@ -1,8 +1,9 @@
 ## <a name="main_help"></a> python3 -m uncrustimpact --help
 ```
-usage: __main__.py [-h] [-la] [--listtools] {genparamsspace,impact} ...
+usage: python3 -m uncrustimpact [-h] [-la] [--listtools]
+                                {genparamsspace,impact} ...
 
-uncrustify-impact
+display uncrustify configuration impact on given source files
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -22,7 +23,7 @@ subcommands:
 
 ## <a name="genparamsspace_help"></a> python3 -m uncrustimpact genparamsspace --help
 ```
-usage: __main__.py genparamsspace [-h]
+usage: python3 -m uncrustimpact genparamsspace [-h]
 
 generate parameters space dict
 
@@ -34,10 +35,10 @@ optional arguments:
 
 ## <a name="impact_help"></a> python3 -m uncrustimpact impact --help
 ```
-usage: __main__.py impact [-h] -f FILE -c CONFIG -od OUTPUTDIR
-                          [-ps PARAMSSPACE] [-odps]
-                          [-ip IGNOREPARAMS [IGNOREPARAMS ...]]
-                          [-cp CONSIDERPARAMS [CONSIDERPARAMS ...]]
+usage: python3 -m uncrustimpact impact [-h] -f FILE -c CONFIG -od OUTPUTDIR
+                                       [-ps PARAMSSPACE] [-odps]
+                                       [-ip IGNOREPARAMS [IGNOREPARAMS ...]]
+                                       [-cp CONSIDERPARAMS [CONSIDERPARAMS ...]]
 
 calculate config impact
 

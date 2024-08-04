@@ -54,7 +54,9 @@ def calculate_impact_tool(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="uncrustify-impact")
+    parser = argparse.ArgumentParser(
+        prog="python3 -m uncrustimpact", description="display uncrustify configuration impact on given source files"
+    )
     parser.add_argument("-la", "--logall", action="store_true", help="Log all messages")
     parser.add_argument("--listtools", action="store_true", help="List tools")
     parser.set_defaults(func=None)

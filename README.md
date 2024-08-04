@@ -34,9 +34,11 @@ Simple command run example:
 
 ```
 python3 -m uncrustimpact impact --file {path-to-C++-file} \
-								--config {path-to-uncrustify-config} \
-								--outputdir {output-directory}
+                                --config {path-to-uncrustify-config} \
+                                --outputdir {output-directory}
 ```
+
+More examples and use cases can be found in `examples` directory.
 
 
 ## Installation
