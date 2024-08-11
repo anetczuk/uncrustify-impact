@@ -24,8 +24,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def execute_uncrustify(input_file_path, base_config_path, out_file_path):
-    error_code = os.system(f"uncrustify -q -c {base_config_path} -f {input_file_path} -o {out_file_path}")  # nosec
+    command = f"uncrustify -q -c {base_config_path} -f {input_file_path} -o {out_file_path}"
+    error_code = os.system(command)  # nosec
     if error_code != 0:
+        _LOGGER.error("unable to execute command: %s", command)
         raise RuntimeError("unable to execute uncrustify")
 
 

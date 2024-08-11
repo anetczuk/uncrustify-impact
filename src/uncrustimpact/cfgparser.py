@@ -10,6 +10,7 @@ import sys
 import os
 from enum import Enum, unique
 
+import re
 import json
 
 
@@ -74,6 +75,9 @@ def read_params_space(cfg_path):
             param_type = ParamType.INTEGER
         elif comment == "unsigned number":
             param_type = ParamType.UNSIGNED
+            allowed_set = read_doc_set(recent_comments)  # sometimes there is limited number of values
+            if allowed_set is not None:
+                param_type = ParamType.SET
         elif "/" in comment:
             param_type = ParamType.SET
             allowed_set = comment.split("/")
@@ -92,6 +96,20 @@ def read_params_space(cfg_path):
         recent_comments = ""
 
     return all_params_dict
+
+
+def read_doc_set(doc_string):
+    allowed = []
+    for line in doc_string.split("\n"):
+        found = re.match(r"#\s(\S):.*?", line)
+        if found is not None:
+            allowed.append(found.group(1))
+    if allowed:
+        if allowed[-1] == "Default":
+            del allowed[-1]
+    if allowed:
+        return sorted(allowed)
+    return None
 
 
 def write_dict_to_cfg(params_dict, out_path):

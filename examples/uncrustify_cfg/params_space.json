@@ -2706,8 +2706,12 @@
     },
     "indent_with_tabs": {
         "value": "1",
-        "type": "ParamType.UNSIGNED",
-        "allowed": null,
+        "type": "ParamType.SET",
+        "allowed": [
+            "0",
+            "1",
+            "2"
+        ],
         "doc": "# How to use tabs when indenting code.\n#\n# 0: Spaces only\n# 1: Indent with tabs to brace level, align with spaces (default)\n# 2: Indent and align with tabs, using spaces when not on a tabstop\n#\n# Default: 1\n",
         "line": "indent_with_tabs                = 1        # unsigned number"
     },
@@ -3175,8 +3179,12 @@
     },
     "indent_paren_close": {
         "value": "0",
-        "type": "ParamType.UNSIGNED",
-        "allowed": null,
+        "type": "ParamType.SET",
+        "allowed": [
+            "0",
+            "1",
+            "2"
+        ],
         "doc": "# How to indent a close parenthesis after a newline.\n#\n# 0: Indent to body level (default)\n# 1: Align under the open parenthesis\n# 2: Indent to the brace level\n",
         "line": "indent_paren_close              = 0        # unsigned number"
     },
@@ -3433,8 +3441,12 @@
     },
     "indent_ternary_operator": {
         "value": "0",
-        "type": "ParamType.UNSIGNED",
-        "allowed": null,
+        "type": "ParamType.SET",
+        "allowed": [
+            "0",
+            "1",
+            "2"
+        ],
         "doc": "# How to indent the continuation of ternary operator.\n#\n# 0: Off (default)\n# 1: When the `if_false` is a continuation, indent it under `if_false`\n# 2: When the `:` is a continuation, indent it under `?`\n",
         "line": "indent_ternary_operator         = 0        # unsigned number"
     },
@@ -5479,8 +5491,12 @@
     },
     "nl_remove_extra_newlines": {
         "value": "0",
-        "type": "ParamType.UNSIGNED",
-        "allowed": null,
+        "type": "ParamType.SET",
+        "allowed": [
+            "0",
+            "1",
+            "2"
+        ],
         "doc": "# How aggressively to remove extra newlines not in preprocessor.\n#\n# 0: No change (default)\n# 1: Remove most newlines not handled by other config\n# 2: Remove all newlines and reformat completely by config\n",
         "line": "nl_remove_extra_newlines        = 0        # unsigned number"
     },
@@ -5878,15 +5894,23 @@
     },
     "align_var_def_star_style": {
         "value": "0",
-        "type": "ParamType.UNSIGNED",
-        "allowed": null,
+        "type": "ParamType.SET",
+        "allowed": [
+            "0",
+            "1",
+            "2"
+        ],
         "doc": "# How to consider (or treat) the '*' in the alignment of variable definitions.\n#\n# 0: Part of the type     'void *   foo;' (default)\n# 1: Part of the variable 'void     *foo;'\n# 2: Dangling             'void    *foo;'\n# Dangling: the '*' will not be taken into account when aligning.\n",
         "line": "align_var_def_star_style        = 0        # unsigned number"
     },
     "align_var_def_amp_style": {
         "value": "0",
-        "type": "ParamType.UNSIGNED",
-        "allowed": null,
+        "type": "ParamType.SET",
+        "allowed": [
+            "0",
+            "1",
+            "2"
+        ],
         "doc": "# How to consider (or treat) the '&' in the alignment of variable definitions.\n#\n# 0: Part of the type     'long &   foo;' (default)\n# 1: Part of the variable 'long     &foo;'\n# 2: Dangling             'long    &foo;'\n# Dangling: the '&' will not be taken into account when aligning.\n",
         "line": "align_var_def_amp_style         = 0        # unsigned number"
     },
@@ -5964,8 +5988,12 @@
     },
     "align_assign_decl_func": {
         "value": "0",
-        "type": "ParamType.UNSIGNED",
-        "allowed": null,
+        "type": "ParamType.SET",
+        "allowed": [
+            "0",
+            "1",
+            "2"
+        ],
         "doc": "# How to apply align_assign_span to function declaration \"assignments\", i.e.\n# 'virtual void foo() = 0' or '~foo() = {default|delete}'.\n#\n# 0: Align with other assignments (default)\n# 1: Align with each other, ignoring regular assignments\n# 2: Don't align\n",
         "line": "align_assign_decl_func          = 0        # unsigned number"
     },
@@ -6048,22 +6076,34 @@
     },
     "align_typedef_func": {
         "value": "0",
-        "type": "ParamType.UNSIGNED",
-        "allowed": null,
+        "type": "ParamType.SET",
+        "allowed": [
+            "0",
+            "1",
+            "2"
+        ],
         "doc": "# How to align typedef'd functions with other typedefs.\n#\n# 0: Don't mix them at all (default)\n# 1: Align the open parenthesis with the types\n# 2: Align the function type name with the other type names\n",
         "line": "align_typedef_func              = 0        # unsigned number"
     },
     "align_typedef_star_style": {
         "value": "0",
-        "type": "ParamType.UNSIGNED",
-        "allowed": null,
+        "type": "ParamType.SET",
+        "allowed": [
+            "0",
+            "1",
+            "2"
+        ],
         "doc": "# How to consider (or treat) the '*' in the alignment of typedefs.\n#\n# 0: Part of the typedef type, 'typedef int * pint;' (default)\n# 1: Part of type name:        'typedef int   *pint;'\n# 2: Dangling:                 'typedef int  *pint;'\n# Dangling: the '*' will not be taken into account when aligning.\n",
         "line": "align_typedef_star_style        = 0        # unsigned number"
     },
     "align_typedef_amp_style": {
         "value": "0",
-        "type": "ParamType.UNSIGNED",
-        "allowed": null,
+        "type": "ParamType.SET",
+        "allowed": [
+            "0",
+            "1",
+            "2"
+        ],
         "doc": "# How to consider (or treat) the '&' in the alignment of typedefs.\n#\n# 0: Part of the typedef type, 'typedef int & intref;' (default)\n# 1: Part of type name:        'typedef int   &intref;'\n# 2: Dangling:                 'typedef int  &intref;'\n# Dangling: the '&' will not be taken into account when aligning.\n",
         "line": "align_typedef_amp_style         = 0        # unsigned number"
     },
@@ -6273,8 +6313,12 @@
     },
     "cmt_reflow_mode": {
         "value": "0",
-        "type": "ParamType.UNSIGNED",
-        "allowed": null,
+        "type": "ParamType.SET",
+        "allowed": [
+            "0",
+            "1",
+            "2"
+        ],
         "doc": "# How to reflow comments.\n#\n# 0: No reflowing (apart from the line wrapping due to cmt_width) (default)\n# 1: No touching at all\n# 2: Full reflow\n",
         "line": "cmt_reflow_mode                 = 0        # unsigned number"
     },

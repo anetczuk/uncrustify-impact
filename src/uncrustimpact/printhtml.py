@@ -16,7 +16,7 @@ from uncrustimpact.cfgparser import ParamType
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def print_to_html(changes: Changes, label_converter=None, bottom_content=None) -> str:
+def print_to_html(changes: Changes, label_converter=None, top_content=None, bottom_content=None) -> str:
     ret_content = """\
 <html>
 <head>
@@ -36,6 +36,10 @@ def print_to_html(changes: Changes, label_converter=None, bottom_content=None) -
     </style>
 </head>
 <body>
+"""
+    if top_content is not None:
+        ret_content += top_content
+    ret_content += """\
 <div class="section">File impact:</div>
 """
 
@@ -74,7 +78,7 @@ def print_to_html(changes: Changes, label_converter=None, bottom_content=None) -
         if label_converter:
             labels_list = label_converter(labels_list)
         if labels_list:
-            modifier_label = " ".join(labels_list)
+            modifier_label = " | ".join(labels_list)
 
         if prev_line == line_num:
             index_content = ""
