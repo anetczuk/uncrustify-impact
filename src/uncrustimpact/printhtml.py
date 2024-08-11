@@ -106,7 +106,7 @@ def print_to_html(changes: Changes, label_converter=None, top_content=None, bott
 # print_param_page(param_name, param_val_list, param_base_value, uncrust_dir_path)
 def print_param_page(param_name, param_data_list, param_prev_value, param_def, changed_lines, output_dir):
     value_set_text = ""
-    if param_def["type"] == str(ParamType.SET):
+    if param_def["type"] == ParamType.SET:
         allowed_list = sorted(param_def["allowed"])
         allowed_list = " ".join(allowed_list)
         value_set_text = f"""<tr> <td>Allowed values:</td>      <td>{allowed_list}</td> </tr>"""

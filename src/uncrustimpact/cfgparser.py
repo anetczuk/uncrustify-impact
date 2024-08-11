@@ -38,6 +38,11 @@ def get_default_params_space():
     return read_params_space(default_cfg_path)
 
 
+def load_params_space_json(params_space_path):
+    with open(params_space_path, encoding="utf-8") as space_file:
+        return json.load(space_file)
+
+
 def read_params_space(cfg_path):
     with open(cfg_path, encoding="utf-8") as item_file:
         lines_list = item_file.readlines()
@@ -73,8 +78,10 @@ def read_params_space(cfg_path):
             param_type = ParamType.STRING
         elif comment == "number":
             param_type = ParamType.INTEGER
+            value = int(value)
         elif comment == "unsigned number":
             param_type = ParamType.UNSIGNED
+            value = int(value)
             allowed_set = read_doc_set(recent_comments)  # sometimes there is limited number of values
             if allowed_set is not None:
                 param_type = ParamType.SET
@@ -86,7 +93,7 @@ def read_params_space(cfg_path):
 
         param_dict = {
             "value": value,
-            "type": str(param_type),
+            "type": param_type,
             "allowed": allowed_set,
             "doc": recent_comments,
             "line": line,
@@ -115,7 +122,6 @@ def read_doc_set(doc_string):
 def write_dict_to_cfg(params_dict, out_path):
     with open(out_path, "w", encoding="utf-8") as out_file:
         content = ""
-        for param_name, param_data in params_dict.items():
-            param_val = param_data["value"]
+        for param_name, param_val in params_dict.items():
             content += f"""{param_name} = {param_val}\n"""
         out_file.write(content)
