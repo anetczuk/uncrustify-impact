@@ -12,15 +12,27 @@ import copy
 
 # import random
 
+from multiprocessing.pool import ThreadPool
+
 from uncrustimpact.diff import Changes
-from uncrustimpact.cfgparser import get_default_params_space, read_params_space, write_dict_to_cfg, ParamType,\
-    load_params_space_json
+from uncrustimpact.cfgparser import (
+    get_default_params_space,
+    read_params_space,
+    write_dict_to_cfg,
+    ParamType,
+    load_params_space_json,
+)
 from uncrustimpact.printhtml import print_to_html, print_param_page, generate_params_stats
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def call_uncrustify(params_base_cfg_dict, base_file_path, out_cfg_path, out_file_path):
+    write_dict_to_cfg(params_base_cfg_dict, out_cfg_path)
+    execute_uncrustify(base_file_path, out_cfg_path, out_file_path)
 
 
 def execute_uncrustify(input_file_path, base_config_path, out_file_path):
@@ -82,6 +94,7 @@ def calculate_impact(
 
     params_stats = {}
 
+    param_list = []
     for param_name, param_def in params_space_dict.items():
         if param_name in ignore_params_set:
             # ignore parameter
@@ -97,16 +110,43 @@ def calculate_impact(
             # params not changed -- skip
             continue
 
+        param_list.append((param_name, param_def, param_values, base_param_value))
+
+    with ThreadPool() as thread_pool:
+        result_queue = []
+        for param_item in param_list:
+            param_name = param_item[0]
+            param_values = param_item[2]
+
+            for param_val in param_values:
+                param_id = f"{param_name}-{param_val}"
+                out_cfg_path = os.path.join(uncrust_dir_path, f"{param_id}.cfg")
+                out_file_path = os.path.join(uncrust_dir_path, f"{param_id}.txt")
+
+                curr_cfg_dict = copy.copy(params_base_cfg_dict)
+                # curr_cfg_dict = copy.deepcopy(params_base_cfg_dict)
+                curr_cfg_dict[param_name] = param_val
+
+                async_result = thread_pool.apply_async(
+                    call_uncrustify, [curr_cfg_dict, base_file_path, out_cfg_path, out_file_path]
+                )
+                result_queue.append(async_result)
+
+        # wait for results
+        for async_result in result_queue:
+            async_result.get()
+
+    for param_item in param_list:
+        param_name = param_item[0]
+        param_def = param_item[1]
+        param_values = param_item[2]
+        base_param_value = param_item[3]
+
         param_val_list = []
         for param_val in param_values:
             param_id = f"{param_name}-{param_val}"
-            params_base_cfg_dict[param_name] = param_val
-
             out_cfg_path = os.path.join(uncrust_dir_path, f"{param_id}.cfg")
-            write_dict_to_cfg(params_base_cfg_dict, out_cfg_path)
-
             out_file_path = os.path.join(uncrust_dir_path, f"{param_id}.txt")
-            execute_uncrustify(base_file_path, out_cfg_path, out_file_path)
 
             with open(out_file_path, encoding="utf-8") as item_file:
                 item_text = item_file.readlines()
@@ -127,9 +167,6 @@ def calculate_impact(
                 out_file.write(raw_diff)
 
             param_val_list.append((param_val, param_id, diff_filename))
-
-        # restore input value
-        params_base_cfg_dict[param_name] = base_param_value
 
         param_changes = changes.count_changes(param_name)
         params_stats[param_name] = param_changes
@@ -176,7 +213,7 @@ def generate_param_values(curr_param_value, param_def_dict):
         if not allowed_list:
             return None
         return list(allowed_list)
-    raise RuntimeError(f"unahandled param type: {param_type}")
+    raise RuntimeError(f"unahandled param type: {param_type} {type(param_type)}")
 
 
 def labels_to_links(labels_list):

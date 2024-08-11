@@ -34,19 +34,19 @@ def compare(filename_base, filename_list, outname):
         item_path = os.path.join(SCRIPT_DIR, item)
         with open(item_path, encoding="utf-8") as item_file:
             item_text = item_file.readlines()
-        changes.print_diff_raw(item_text)
+        # changes.print_diff_raw(item_text)
         changes.add_diff(item, item_text)
 
     content = print_to_html(changes)
 
-    print(content)
+    # print(content)
 
     out_path = os.path.join(SCRIPT_DIR, outname)
 
     with open(out_path, "w", encoding="utf-8") as out_file:
         out_file.write(content)
 
-    changes.print_diff()
+    # changes.print_diff()
 
 
 file1_name = "example.cpp"

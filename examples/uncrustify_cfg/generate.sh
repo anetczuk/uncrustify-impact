@@ -7,6 +7,9 @@ set -eu
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
 
+echo "running example uncrustify_cfg"
+
+
 uncrustify --show-config > $SCRIPT_DIR/default.cfg
 
 

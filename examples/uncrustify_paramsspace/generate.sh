@@ -7,6 +7,9 @@ set -eu
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
 
+echo "running example uncrustify_paramsspace"
+
+
 OUT_DIR="$SCRIPT_DIR/impact"
 
 rm -fr "$OUT_DIR"

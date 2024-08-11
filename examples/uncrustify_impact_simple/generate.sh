@@ -7,6 +7,9 @@ set -eu
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
 
+echo "running example uncrustify_impact_simple"
+
+
 OUT_DIR="$SCRIPT_DIR/impact"
 
 rm -fr "$OUT_DIR"

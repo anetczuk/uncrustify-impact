@@ -27,6 +27,8 @@ class ParamType(Enum):
 
 def print_params_space():
     params_space_dict = get_default_params_space()
+    for subdict in params_space_dict.values():
+        subdict["type"] = str(subdict["type"])
     json.dump(params_space_dict, sys.stdout, indent=4)
 
 
@@ -39,8 +41,17 @@ def get_default_params_space():
 
 
 def load_params_space_json(params_space_path):
+    type_name = "ParamType"
+    type_name += "."
     with open(params_space_path, encoding="utf-8") as space_file:
-        return json.load(space_file)
+        loaded_dict = json.load(space_file)
+        for param_def in loaded_dict.values():
+            param_type = param_def["type"]
+            if not param_type.startswith(type_name):
+                raise RuntimeError(f"invalid type value: {param_type}")
+            param_type = param_type[len(type_name) :]
+            param_def["type"] = ParamType[param_type]
+        return loaded_dict
 
 
 def read_params_space(cfg_path):
@@ -91,13 +102,7 @@ def read_params_space(cfg_path):
         else:
             raise RuntimeError(f"unknown type: {comment} example value: {value}")
 
-        param_dict = {
-            "value": value,
-            "type": param_type,
-            "allowed": allowed_set,
-            "doc": recent_comments,
-            "line": line,
-        }
+        param_dict = {"value": value, "type": param_type, "allowed": allowed_set, "doc": recent_comments, "line": line}
         all_params_dict[name] = param_dict
 
         recent_comments = ""

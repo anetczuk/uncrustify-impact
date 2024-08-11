@@ -290,6 +290,8 @@ class Changes:
         #                              tofile='file2.txt',
         #                              n=0)
 
+        return self.file_state.parse_diff(file_name, diff_list)
+
     def parse_diff(self, file_name, diff_list):
         return self.file_state.parse_diff(file_name, diff_list)
 
