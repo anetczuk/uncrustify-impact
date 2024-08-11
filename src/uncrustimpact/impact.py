@@ -32,7 +32,7 @@ def execute_uncrustify(input_file_path, base_config_path, out_file_path):
 
 
 def calculate_impact(
-    base_file_path,
+    input_base_file_path,
     base_config_path,
     output_base_dir_path,
     params_space_path=None,
@@ -42,7 +42,11 @@ def calculate_impact(
 ):
     uncrust_dir_path = os.path.join(output_base_dir_path, "uncrustify")
     os.makedirs(uncrust_dir_path, exist_ok=True)
-    # input_filename = os.path.basename(base_file_path)
+    input_filename = os.path.basename(input_base_file_path)
+
+    # setting extension to .txt changes results
+    base_file_path = os.path.join(output_base_dir_path, input_filename)
+    execute_uncrustify(input_base_file_path, base_config_path, base_file_path)
 
     ignore_params_set = set()
     if ignore_params:
@@ -138,11 +142,17 @@ def calculate_impact(
 
     # changes.print_diff()
 
+    top_content = f"""\
+<div><b>Base file:</b> <a href="{base_file_path}">{base_file_path}</a></div>
+"""
+
     params_stats = dict(sorted(params_stats.items(), key=lambda item: (-item[1], item[0])))
     bottom_content = generate_params_stats(params_stats, label_to_link=label_to_link)
 
     # write general diff
-    content = print_to_html(changes, label_converter=labels_to_links, bottom_content=bottom_content)
+    content = print_to_html(
+        changes, label_converter=labels_to_links, top_content=top_content, bottom_content=bottom_content
+    )
     out_path = os.path.join(output_base_dir_path, "index.html")
     with open(out_path, "w", encoding="utf-8") as out_file:
         out_file.write(content)
