@@ -273,7 +273,7 @@ def labels_to_links(labels_list):
 
 
 def label_to_link(label):
-    return f"""<a href="./uncrustify/{label}.html">{label}</a>"""
+    return f"""<a href="./params/{label}.html">{label}</a>"""
 
 
 def name_to_diff_filename(name):

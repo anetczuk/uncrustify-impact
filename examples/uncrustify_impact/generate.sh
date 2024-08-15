@@ -35,10 +35,10 @@ else
 fi
 
 
-result=$(checklink -q $OUT_DIR/index.html)
+result=$(checklink -r -q $OUT_DIR/index.html)
 if [[ "$result" != "" ]]; then
 	echo "broken links found:"
-	echo $result
+	echo "$result"
 	exit 1
 fi
 # else: # empty string - no errors

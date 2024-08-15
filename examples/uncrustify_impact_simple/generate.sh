@@ -35,7 +35,7 @@ python3 -m uncrustimpact impact --file $SCRIPT_DIR/example.cpp \
 												 sp_func_def_paren sp_func_def_paren_empty sp_inside_fparen sp_inside_fparens align_asm_colon
 
 
-result=$(checklink -q $OUT_DIR/index.html)
+result=$(checklink -r -q $OUT_DIR/index.html)
 if [[ "$result" != "" ]]; then
 	echo "broken links found:"
 	echo $result

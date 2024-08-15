@@ -27,8 +27,8 @@ python3 -m uncrustimpact impact --file $SCRIPT_DIR/example.cpp \
 								--outputdir $OUT_DIR \
 								--ignoreparams indent_columns cmt_width cmt_cpp_to_c nl_max sp_before_semi
 
-								
-result=$(checklink -q $OUT_DIR/index.html)
+
+result=$(checklink -r -q "$OUT_DIR/index.html")
 if [[ "$result" != "" ]]; then
 	echo "broken links found:"
 	echo $result
