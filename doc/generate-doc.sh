@@ -31,7 +31,7 @@ generate_help() {
     IFS=', ' read -r -a tools_list <<< "$tools"
 
     for item in ${tools_list[@]}; do
-        echo $item
+        # echo $item
         echo -e "\n\n" >> ${HELP_PATH}
         echo "## <a name=\"${item}_help\"></a> $COMMAND_TEXT $item --help" >> ${HELP_PATH}
         echo -e "\`\`\`" >> ${HELP_PATH}

@@ -104,6 +104,41 @@ def print_to_html(changes: Changes, label_converter=None, top_content=None, bott
 
 
 # print_param_page(param_name, param_val_list, param_base_value, uncrust_dir_path)
+def print_files_page(files_stats_dict, output_path):
+    output_dir = os.path.dirname(output_path)
+    output_dir_len = len(output_dir)
+    if output_dir_len > 0:
+        output_dir_len += 1  # include slash
+
+    content = """\
+<html>
+<head>
+</head>
+<body>
+    <table>
+        <tr style="text-align: left;"> <th>File:</th>               <th>Number of changes:</th>  </tr>
+"""
+
+    for file_path, changes_data in files_stats_dict.items():
+        target_path = changes_data[0]
+        if target_path.startswith(output_dir):
+            target_path = target_path[output_dir_len:]
+        content += f"""\
+        <tr> \
+<td><a href="{target_path}">{file_path}</a></td> \
+<td>{changes_data[1]}</td> \
+</tr>
+"""
+    content += """\
+    </table>
+</body>
+</html>
+"""
+    with open(output_path, "w", encoding="utf-8") as out_file:
+        out_file.write(content)
+
+
+# print_param_page(param_name, param_val_list, param_base_value, uncrust_dir_path)
 def print_param_page(param_name, param_data_list, param_prev_value, param_def, changed_lines, output_dir):
     value_set_text = ""
     if param_def["type"] == ParamType.SET:

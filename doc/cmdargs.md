@@ -7,8 +7,8 @@ display uncrustify configuration impact on given source files
 
 optional arguments:
   -h, --help            show this help message and exit
-  -la, --logall         Log all messages
-  --listtools           List tools
+  -la, --logall         Log all messages (default: False)
+  --listtools           List tools (default: False)
 
 subcommands:
   use one of tools
@@ -35,8 +35,11 @@ optional arguments:
 
 ## <a name="impact_help"></a> python3 -m uncrustimpact impact --help
 ```
-usage: python3 -m uncrustimpact impact [-h] -f FILE -c CONFIG -od OUTPUTDIR
-                                       [-ps PARAMSSPACE] [-odps]
+usage: python3 -m uncrustimpact impact [-h] [--file FILE]
+                                       [-f FILES [FILES ...]] [-d DIR]
+                                       [--extlist EXTLIST [EXTLIST ...]] -c
+                                       CONFIG -od OUTPUTDIR [-ps PARAMSSPACE]
+                                       [-odps]
                                        [-ip IGNOREPARAMS [IGNOREPARAMS ...]]
                                        [-cp CONSIDERPARAMS [CONSIDERPARAMS ...]]
 
@@ -44,17 +47,24 @@ calculate config impact
 
 optional arguments:
   -h, --help            show this help message and exit
-  -f FILE, --file FILE  File to analyze
+  --file FILE           File to analyze (default: None)
+  -f FILES [FILES ...], --files FILES [FILES ...]
+                        Files to analyze (default: [])
+  -d DIR, --dir DIR     Path to directory to search for files (default: None)
+  --extlist EXTLIST [EXTLIST ...]
+                        List of extensions to look for (in case of --dir)
+                        (default: ['.h', '.hpp', '.c', 'cpp'])
   -c CONFIG, --config CONFIG
-                        Base uncrustify config
+                        Base uncrustify config (default: None)
   -od OUTPUTDIR, --outputdir OUTPUTDIR
-                        Output directory
+                        Output directory (default: None)
   -ps PARAMSSPACE, --paramsspace PARAMSSPACE
-                        Path to params space config JSON
+                        Path to params space config JSON (default: None)
   -odps, --overridedefparamsspace
-                        Override default params space with given one
+                        Override default params space with given one (default:
+                        False)
   -ip IGNOREPARAMS [IGNOREPARAMS ...], --ignoreparams IGNOREPARAMS [IGNOREPARAMS ...]
-                        Parameters list to ignore
+                        Parameters list to ignore (default: [])
   -cp CONSIDERPARAMS [CONSIDERPARAMS ...], --considerparams CONSIDERPARAMS [CONSIDERPARAMS ...]
-                        Parameters list to consider
+                        Parameters list to consider (default: [])
 ```

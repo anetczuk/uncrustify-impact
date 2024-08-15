@@ -9,6 +9,7 @@
 import os
 import logging
 import copy
+import re
 
 # import random
 
@@ -22,7 +23,7 @@ from uncrustimpact.cfgparser import (
     ParamType,
     load_params_space_json,
 )
-from uncrustimpact.printhtml import print_to_html, print_param_page, generate_params_stats
+from uncrustimpact.printhtml import print_to_html, print_param_page, generate_params_stats, print_files_page
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -44,7 +45,7 @@ def execute_uncrustify(input_file_path, base_config_path, out_file_path):
 
 
 def calculate_impact(
-    input_base_file_path,
+    input_base_file_set,
     base_config_path,
     output_base_dir_path,
     params_space_path=None,
@@ -52,8 +53,61 @@ def calculate_impact(
     ignore_params=None,
     consider_params=None,
 ):
-    uncrust_dir_path = os.path.join(output_base_dir_path, "uncrustify")
-    os.makedirs(uncrust_dir_path, exist_ok=True)
+    os.makedirs(output_base_dir_path, exist_ok=True)
+
+    params_space_dict = None
+    if params_space_path:
+        _LOGGER.info("using params space from file: %s", params_space_path)
+        params_space_dict = load_params_space_json(params_space_path)
+        if override_def_params_space:
+            def_space_dict = get_default_params_space()
+            params_space_dict = {**def_space_dict, **params_space_dict}
+    else:
+        _LOGGER.info("using default params space")
+        params_space_dict = get_default_params_space()
+
+    path_prefix_len = 0
+    if len(input_base_file_set) > 1:
+        path_prefix = os.path.commonprefix(list(input_base_file_set))
+        path_prefix_len = len(path_prefix)
+    else:
+        first_item = list(input_base_file_set)[0]
+        path_prefix_len = len(os.path.dirname(first_item)) + 1  # include dir slash
+
+    files_stats = {}
+    for file_path in input_base_file_set:
+        _LOGGER.info("handling file %s", file_path)
+        file_rel_path = file_path[path_prefix_len:]
+        file_dir_name = copy.deepcopy(file_rel_path)
+        file_dir_name = file_dir_name.replace(".", "_")
+        file_dir_name = file_dir_name.replace("/", "_")
+        file_dir_name = file_dir_name.replace("\\", "_")
+        file_dir_name = re.sub(r"\s+", "_", file_dir_name)  # replace all whitespaces
+        file_dir_path = os.path.join(output_base_dir_path, file_dir_name)
+
+        file_index_path, param_stats = calculate_impact_file(
+            file_path, base_config_path, file_dir_path, params_space_dict, ignore_params, consider_params
+        )
+
+        files_stats[file_rel_path] = (file_index_path, sum(param_stats.values()))
+
+    files_stats = dict(sorted(files_stats.items(), key=lambda item: (-item[1][1], item[0])))
+
+    out_path = os.path.join(output_base_dir_path, "index.html")
+    _LOGGER.info("writing main page in file://%s", out_path)
+    print_files_page(files_stats, out_path)
+
+
+def calculate_impact_file(
+    input_base_file_path,
+    base_config_path,
+    output_base_dir_path,
+    params_space_dict=None,
+    ignore_params=None,
+    consider_params=None,
+):
+    params_dir_path = os.path.join(output_base_dir_path, "params")
+    os.makedirs(params_dir_path, exist_ok=True)
     input_filename = os.path.basename(input_base_file_path)
 
     # setting extension to .txt changes results
@@ -80,17 +134,6 @@ def calculate_impact(
     params_base_cfg_dict = {key: subdict["value"] for key, subdict in params_base_cfg_dict.items()}
 
     changes = Changes("base", filebase_text)
-
-    params_space_dict = None
-    if params_space_path:
-        _LOGGER.info("using params space from file: %s", params_space_path)
-        params_space_dict = load_params_space_json(params_space_path)
-        if override_def_params_space:
-            def_space_dict = get_default_params_space()
-            params_space_dict = {**def_space_dict, **params_space_dict}
-    else:
-        _LOGGER.info("using default params space")
-        params_space_dict = get_default_params_space()
 
     params_stats = {}
 
@@ -120,13 +163,14 @@ def calculate_impact(
 
             for param_val in param_values:
                 param_id = f"{param_name}-{param_val}"
-                out_cfg_path = os.path.join(uncrust_dir_path, f"{param_id}.cfg")
-                out_file_path = os.path.join(uncrust_dir_path, f"{param_id}.txt")
+                out_cfg_path = os.path.join(params_dir_path, f"{param_id}.cfg")
+                out_file_path = os.path.join(params_dir_path, f"{param_id}.txt")
 
                 curr_cfg_dict = copy.copy(params_base_cfg_dict)
                 # curr_cfg_dict = copy.deepcopy(params_base_cfg_dict)
                 curr_cfg_dict[param_name] = param_val
 
+                # execute uncrustify in separate thread
                 async_result = thread_pool.apply_async(
                     call_uncrustify, [curr_cfg_dict, base_file_path, out_cfg_path, out_file_path]
                 )
@@ -145,8 +189,8 @@ def calculate_impact(
         param_val_list = []
         for param_val in param_values:
             param_id = f"{param_name}-{param_val}"
-            out_cfg_path = os.path.join(uncrust_dir_path, f"{param_id}.cfg")
-            out_file_path = os.path.join(uncrust_dir_path, f"{param_id}.txt")
+            out_cfg_path = os.path.join(params_dir_path, f"{param_id}.cfg")
+            out_file_path = os.path.join(params_dir_path, f"{param_id}.txt")
 
             with open(out_file_path, encoding="utf-8") as item_file:
                 item_text = item_file.readlines()
@@ -162,7 +206,7 @@ def calculate_impact(
             # write files diff to file
             raw_diff = "".join(raw_diff)
             diff_filename = name_to_diff_filename(param_id)
-            out_diff_path = os.path.join(uncrust_dir_path, diff_filename)
+            out_diff_path = os.path.join(params_dir_path, diff_filename)
             with open(out_diff_path, "w", encoding="utf-8") as out_file:
                 out_file.write(raw_diff)
 
@@ -172,12 +216,12 @@ def calculate_impact(
         params_stats[param_name] = param_changes
 
         # write parameter page
-        print_param_page(param_name, param_val_list, base_param_value, param_def, param_changes, uncrust_dir_path)
+        print_param_page(param_name, param_val_list, base_param_value, param_def, param_changes, params_dir_path)
 
     # changes.print_diff()
 
     top_content = f"""\
-<div><b>Base file:</b> <a href="{base_file_path}">{base_file_path}</a></div>
+<div><b>Base file:</b> <a href="{input_filename}">{input_filename}</a></div>
 """
 
     params_stats = dict(sorted(params_stats.items(), key=lambda item: (-item[1], item[0])))
@@ -192,6 +236,8 @@ def calculate_impact(
         out_file.write(content)
 
     _LOGGER.info("output stored to: file://%s", out_path)
+
+    return out_path, params_stats
 
 
 def generate_param_values(curr_param_value, param_def_dict):
