@@ -35,14 +35,24 @@ python3 -m uncrustimpact impact --file $SCRIPT_DIR/example.cpp \
 												 sp_func_def_paren sp_func_def_paren_empty sp_inside_fparen sp_inside_fparens align_asm_colon
 
 
+result=$(checklink -q $OUT_DIR/index.html)
+if [[ "$result" != "" ]]; then
+	echo "broken links found:"
+	echo $result
+	exit 1
+fi
+# else: # empty string - no errors
+echo "no broken links found"
+
+
 ## generate image from html
 if [ -f "$OUT_DIR/index.html" ]; then
     cutycapt --url=file://$OUT_DIR/index.html --out=$OUT_DIR/index.png
     convert "$OUT_DIR/index.png" -strip -trim "$OUT_DIR/index.png"
 fi
 
-if [ -f "$OUT_DIR/uncrustify/cmt_cpp_to_c.html" ]; then
-    cutycapt --url=file://$OUT_DIR/uncrustify/cmt_cpp_to_c.html --out=$OUT_DIR/cmt_cpp_to_c.png
+if [ -f "$OUT_DIR/example_cpp/params/cmt_cpp_to_c.html" ]; then
+    cutycapt --url=file://$OUT_DIR/example_cpp/params/cmt_cpp_to_c.html --out=$OUT_DIR/cmt_cpp_to_c.png
     convert "$OUT_DIR/cmt_cpp_to_c.png" -strip -trim "$OUT_DIR/cmt_cpp_to_c.png"
 fi
 

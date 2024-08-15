@@ -33,3 +33,13 @@ else
 									--outputdir $OUT_DIR \
 									--ignoreparams code_width cmt_width indent_columns
 fi
+
+
+result=$(checklink -q $OUT_DIR/index.html)
+if [[ "$result" != "" ]]; then
+	echo "broken links found:"
+	echo $result
+	exit 1
+fi
+# else: # empty string - no errors
+echo "no broken links found"
