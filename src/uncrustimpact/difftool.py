@@ -103,7 +103,7 @@ def calculate_diff_file(input_base_file_path, base_config_path, output_base_dir_
 
     total_changes = changes.count_changed_lines()
     bottom_content = f"""
-<div class="section">Total changed lines: {total_changes}</div>
+<div class="section">Lines changed: {total_changes}</div>
 """
 
     # write general diff

@@ -229,7 +229,7 @@ def calculate_impact_file(
 
     total_changes = changes.count_changed_lines()
     bottom_content = f"""
-<div class="section">Total changed lines: {total_changes}</div>
+<div class="section">Lines changed: {total_changes}</div>
 """
     bottom_content += generate_params_stats(params_stats, label_to_link=label_to_link)
 
