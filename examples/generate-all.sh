@@ -17,6 +17,8 @@ $SCRIPT_DIR/uncrustify_impact_simple/generate.sh
 
 $SCRIPT_DIR/uncrustify_paramsspace/generate.sh
 
+$SCRIPT_DIR/uncrustify_diff/generate.sh
+
 
 ## generate small images
 #$SCRIPT_DIR/generate_small.sh
