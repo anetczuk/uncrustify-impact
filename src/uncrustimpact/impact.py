@@ -14,6 +14,7 @@ import re
 # import random
 
 from multiprocessing.pool import ThreadPool
+from multiprocessing import Pool
 
 from uncrustimpact.diff import Changes
 from uncrustimpact.cfgparser import (
@@ -75,21 +76,29 @@ def calculate_impact(
         path_prefix_len = len(os.path.dirname(first_item)) + 1  # include dir slash
 
     files_stats = {}
-    for file_path in input_base_file_set:
-        _LOGGER.info("handling file %s", file_path)
-        file_rel_path = file_path[path_prefix_len:]
-        file_dir_name = copy.deepcopy(file_rel_path)
-        file_dir_name = file_dir_name.replace(".", "_")
-        file_dir_name = file_dir_name.replace("/", "_")
-        file_dir_name = file_dir_name.replace("\\", "_")
-        file_dir_name = re.sub(r"\s+", "_", file_dir_name)  # replace all whitespaces
-        file_dir_path = os.path.join(output_base_dir_path, file_dir_name)
+    with Pool() as thread_pool:
+        result_queue = []
 
-        file_index_path, param_stats = calculate_impact_file(
-            file_path, base_config_path, file_dir_path, params_space_dict, ignore_params, consider_params
-        )
+        for file_path in input_base_file_set:
+            file_rel_path = file_path[path_prefix_len:]
+            file_dir_name = copy.deepcopy(file_rel_path)
+            file_dir_name = file_dir_name.replace(".", "_")
+            file_dir_name = file_dir_name.replace("/", "_")
+            file_dir_name = file_dir_name.replace("\\", "_")
+            file_dir_name = re.sub(r"\s+", "_", file_dir_name)  # replace all whitespaces
+            file_dir_path = os.path.join(output_base_dir_path, file_dir_name)
 
-        files_stats[file_rel_path] = (file_index_path, sum(param_stats.values()))
+            # execute uncrustify in separate thread
+            async_result = thread_pool.apply_async(
+                calculate_impact_file,
+                [file_path, base_config_path, file_dir_path, params_space_dict, ignore_params, consider_params],
+            )
+            result_queue.append((file_rel_path, async_result))
+
+        # wait for results
+        for file_rel_path, async_result in result_queue:
+            file_index_path, param_stats = async_result.get()
+            files_stats[file_rel_path] = (file_index_path, sum(param_stats.values()))
 
     files_stats = dict(sorted(files_stats.items(), key=lambda item: (-item[1][1], item[0])))
 
@@ -106,6 +115,8 @@ def calculate_impact_file(
     ignore_params=None,
     consider_params=None,
 ):
+    _LOGGER.info("handling file %s", input_base_file_path)
+
     params_dir_path = os.path.join(output_base_dir_path, "params")
     os.makedirs(params_dir_path, exist_ok=True)
     input_filename = os.path.basename(input_base_file_path)

@@ -119,18 +119,23 @@ def print_files_page(files_stats_dict, output_path):
         <tr style="text-align: left;"> <th>File:</th>               <th>Number of changes:</th>  </tr>
 """
 
+    total_changes = 0
     for file_path, changes_data in files_stats_dict.items():
         target_path = changes_data[0]
         if target_path.startswith(output_dir):
             target_path = target_path[output_dir_len:]
+        changes_num = changes_data[1]
         content += f"""\
         <tr> \
 <td><a href="{target_path}">{file_path}</a></td> \
-<td>{changes_data[1]}</td> \
+<td>{changes_num}</td> \
 </tr>
 """
-    content += """\
+        total_changes += changes_num
+
+    content += f"""\
     </table>
+<div style="margin-top: 12px"><b>Total changes:</b><span style="margin-left: 12px">{total_changes}</span></div>
 </body>
 </html>
 """
