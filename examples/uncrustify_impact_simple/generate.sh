@@ -46,8 +46,8 @@ echo "no broken links found"
 
 
 ## generate image from html
-if [ -f "$OUT_DIR/index.html" ]; then
-    cutycapt --url=file://$OUT_DIR/index.html --out=$OUT_DIR/index.png
+if [ -f "$OUT_DIR/example_cpp/index.html" ]; then
+    cutycapt --url=file://$OUT_DIR/example_cpp/index.html --out=$OUT_DIR/index.png
     convert "$OUT_DIR/index.png" -strip -trim "$OUT_DIR/index.png"
 fi
 
