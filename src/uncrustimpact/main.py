@@ -15,7 +15,8 @@ import argparse
 from glob import glob
 
 from uncrustimpact.cfgparser import print_params_space
-from uncrustimpact.impact import calculate_impact
+from uncrustimpact.impacttool import calculate_impact
+from uncrustimpact.difftool import calculate_diff
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -55,6 +56,19 @@ def calculate_impact_tool(args):
         ignore_params=ignore_params,
         consider_params=consider_params,
     )
+    _LOGGER.info("Completed")
+
+
+def calculate_diff_tool(args):
+    _LOGGER.info("Starting diff calculation")
+
+    files_set = find_files(args.dir, args.extlist)
+    if args.files:
+        files_set.update(args.files)
+
+    input_config_path = args.config
+    output_dir_path = args.outputdir
+    calculate_diff(files_set, input_config_path, output_dir_path)
     _LOGGER.info("Completed")
 
 
@@ -119,6 +133,23 @@ def main():
     )
     subparser.add_argument("-ip", "--ignoreparams", nargs="+", default=[], help="Parameters list to ignore")
     subparser.add_argument("-cp", "--considerparams", nargs="+", default=[], help="Parameters list to consider")
+
+    ## =================================================
+
+    description = "show changes made by given config"
+    subparser = subparsers.add_parser("diff", help=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    subparser.description = description
+    subparser.set_defaults(func=calculate_diff_tool)
+    subparser.add_argument("-f", "--files", nargs="+", default=[], help="Files to analyze")
+    subparser.add_argument("-d", "--dir", action="store", help="Path to directory to search for files")
+    subparser.add_argument(
+        "--extlist",
+        nargs="+",
+        default=[".h", ".hpp", ".c", "cpp"],
+        help="List of extensions to look for (in case of --dir)",
+    )
+    subparser.add_argument("-c", "--config", action="store", required=True, help="Base uncrustify config")
+    subparser.add_argument("-od", "--outputdir", action="store", required=True, help="Output directory")
 
     ## =================================================
 

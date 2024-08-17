@@ -18,7 +18,7 @@ sys.path.append(os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir, "
 
 
 # pylint: disable=C0413
-from uncrustimpact.diff import Changes
+from uncrustimpact.filediff import Changes
 from uncrustimpact.printhtml import print_to_html
 
 

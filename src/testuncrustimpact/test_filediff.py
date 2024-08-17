@@ -23,7 +23,7 @@
 
 import unittest
 
-from uncrustimpact.diff import Changes
+from uncrustimpact.filediff import Changes
 
 
 class DiffTest(unittest.TestCase):

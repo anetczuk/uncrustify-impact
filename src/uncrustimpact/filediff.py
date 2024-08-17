@@ -28,7 +28,7 @@ class LineModifier(Enum):
 
 @dataclass
 class LineState:
-    file_name: str
+    label_name: str
     state: LineModifier
 
     def is_modifier(self, modifier: LineModifier):
@@ -75,11 +75,12 @@ class LineModifiers:
                 return True
         return False
 
-    def count_changes(self, label):
+    def count_changes(self, label=None):
         state_set = set()
         for item in self.modifiers:
-            if item.file_name != label:
-                continue
+            if label is not None:
+                if item.label_name != label:
+                    continue
             if item.state == LineModifier.SAME:
                 continue
             state_set.add(item.state)
@@ -89,14 +90,14 @@ class LineModifiers:
         ret_list = []
         for item in self.modifiers:
             if item.is_modifier(modifier):
-                ret_list.append(item.file_name)
+                ret_list.append(item.label_name)
         return ret_list
 
     def get_modified_files(self) -> List[str]:
         ret_list = []
         for item in self.modifiers:
             if item.is_modified():
-                ret_list.append(item.file_name)
+                ret_list.append(item.label_name)
         return ret_list
 
     def add_state(self, label, modifier: LineModifier):
@@ -105,7 +106,7 @@ class LineModifiers:
     def to_list_raw(self):
         ret_list = []
         for item in self.modifiers:
-            ret_list.append((item.file_name, item.state.name))
+            ret_list.append((item.label_name, item.state.name))
         return ret_list
 
     def to_str(self):
@@ -179,7 +180,16 @@ class FileState:
         self._modify_stream = ModifyStream()
         self._line_counter = -1
 
-    def count_changes(self, label):
+    def count_changed_lines(self):
+        counted = 0
+        if self.before.count_changes() > 0:
+            counted += 1
+        for item in self.line_state:
+            if item.count_changes() > 0:
+                counted += 1
+        return counted
+
+    def count_changes(self, label=None):
         counted = self.before.count_changes(label)
         for item in self.line_state:
             counted += item.count_changes(label)
@@ -199,7 +209,7 @@ class FileState:
             ret_dict[index] = item
         return ret_dict
 
-    def parse_diff(self, file_name, diff_list):
+    def parse_diff(self, label_name, diff_list):
         ### According to documentation:
         #
         # Each line of a Differ delta begins with a two-letter code:
@@ -215,23 +225,23 @@ class FileState:
             if line.startswith("  "):
                 # line the same
                 self._line_counter += 1
-                self._add_state(file_name, LineModifier.SAME)
+                self._add_state(label_name, LineModifier.SAME)
                 continue
             if line.startswith("+ "):
                 # line added
-                self._add_state(file_name, LineModifier.ADDED)
+                self._add_state(label_name, LineModifier.ADDED)
                 changed = True
                 continue
             if line.startswith("- "):
                 # line removed
                 self._line_counter += 1
-                self._add_state(file_name, LineModifier.REMOVED)
+                self._add_state(label_name, LineModifier.REMOVED)
                 changed = True
                 continue
             if line.startswith("? "):
                 # line modified
                 # self._line_counter += 1
-                self._add_state(file_name, LineModifier.CHANGED)
+                self._add_state(label_name, LineModifier.CHANGED)
                 changed = True
                 continue
             raise RuntimeError("unknown marker")
@@ -271,7 +281,10 @@ class Changes:
     def get_content_line(self, line_index):
         return self.base_lines[line_index]
 
-    def count_changes(self, label):
+    def count_changed_lines(self):
+        return self.file_state.count_changed_lines()
+
+    def count_changes(self, label=None):
         return self.file_state.count_changes(label)
 
     def add_diff(self, file_name, content_lines):
@@ -292,8 +305,8 @@ class Changes:
 
         return self.file_state.parse_diff(file_name, diff_list)
 
-    def parse_diff(self, file_name, diff_list):
-        return self.file_state.parse_diff(file_name, diff_list)
+    def parse_diff(self, label_name, diff_list):
+        return self.file_state.parse_diff(label_name, diff_list)
 
     def to_dict_raw(self):
         return self.file_state.to_dict_raw()

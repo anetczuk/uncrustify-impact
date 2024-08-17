@@ -9,7 +9,7 @@
 import os
 import html
 
-from uncrustimpact.diff import Changes, LineModifier
+from uncrustimpact.filediff import Changes, LineModifier
 from uncrustimpact.cfgparser import ParamType
 
 

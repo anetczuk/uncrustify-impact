@@ -16,7 +16,7 @@ import re
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Pool
 
-from uncrustimpact.diff import Changes
+from uncrustimpact.filediff import Changes
 from uncrustimpact.cfgparser import (
     get_default_params_space,
     read_params_space,
@@ -67,29 +67,19 @@ def calculate_impact(
         _LOGGER.info("using default params space")
         params_space_dict = get_default_params_space()
 
-    path_prefix_len = 0
-    if len(input_base_file_set) > 1:
-        path_prefix = os.path.commonprefix(list(input_base_file_set))
-        path_prefix_len = len(path_prefix)
-    else:
-        first_item = list(input_base_file_set)[0]
-        path_prefix_len = len(os.path.dirname(first_item)) + 1  # include dir slash
+    path_prefix_len = get_common_prefix_len(input_base_file_set)
 
     files_stats = {}
-    with Pool() as thread_pool:
+    with Pool() as process_pool:
         result_queue = []
 
         for file_path in input_base_file_set:
             file_rel_path = file_path[path_prefix_len:]
-            file_dir_name = copy.deepcopy(file_rel_path)
-            file_dir_name = file_dir_name.replace(".", "_")
-            file_dir_name = file_dir_name.replace("/", "_")
-            file_dir_name = file_dir_name.replace("\\", "_")
-            file_dir_name = re.sub(r"\s+", "_", file_dir_name)  # replace all whitespaces
+            file_dir_name = convert_path(file_rel_path)
             file_dir_path = os.path.join(output_base_dir_path, file_dir_name)
 
             # execute uncrustify in separate thread
-            async_result = thread_pool.apply_async(
+            async_result = process_pool.apply_async(
                 calculate_impact_file,
                 [file_path, base_config_path, file_dir_path, params_space_dict, ignore_params, consider_params],
             )
@@ -236,7 +226,12 @@ def calculate_impact_file(
 """
 
     params_stats = dict(sorted(params_stats.items(), key=lambda item: (-item[1], item[0])))
-    bottom_content = generate_params_stats(params_stats, label_to_link=label_to_link)
+
+    total_changes = changes.count_changed_lines()
+    bottom_content = f"""
+<div class="section">Total changed lines: {total_changes}</div>
+"""
+    bottom_content += generate_params_stats(params_stats, label_to_link=label_to_link)
 
     # write general diff
     content = print_to_html(
@@ -278,8 +273,12 @@ def labels_to_links(labels_list):
         return labels_list
     links_list = []
     for item in labels_list:
+        if not item:
+            continue
         link = label_to_link(item)
         links_list.append(link)
+    if not links_list:
+        return None
     return links_list
 
 
@@ -289,3 +288,23 @@ def label_to_link(label):
 
 def name_to_diff_filename(name):
     return f"{name}.diff.txt"
+
+
+def convert_path(file_path):
+    file_dir_name = copy.deepcopy(file_path)
+    file_dir_name = file_dir_name.replace(".", "_")
+    file_dir_name = file_dir_name.replace("/", "_")
+    file_dir_name = file_dir_name.replace("\\", "_")
+    file_dir_name = re.sub(r"\s+", "_", file_dir_name)  # replace all whitespaces
+    return file_dir_name
+
+
+def get_common_prefix_len(string_list):
+    list_len = len(string_list)
+    if list_len > 1:
+        path_prefix = os.path.commonprefix(list(string_list))
+        return len(path_prefix)
+    if list_len > 0:
+        first_item = list(string_list)[0]
+        return len(os.path.dirname(first_item)) + 1  # include dir slash
+    return 0
