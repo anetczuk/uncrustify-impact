@@ -169,27 +169,34 @@ def print_param_page(param_name, param_data_list, param_prev_value, param_def, c
         <tr> <td>Prev value:</td>     <td>{param_prev_value}</td>   </tr>
         {param_doc_text}
     </table>
+"""
 
+    if param_data_list:
+        content += """\
     <table>
         <tr>
             <th>New value:</th>
         </tr>
 """
 
-    for param_data in param_data_list:
-        param_val = param_data[0]
-        param_id = param_data[1]
-        diff_filename = param_data[2]
-        content += f"""\
+        for param_data in param_data_list:
+            param_val = param_data[0]
+            config_output = param_data[1]
+            file_output = param_data[2]
+            diff_output = param_data[3]
+            content += f"""\
         <tr> \
 <td>{param_val}</td> \
-<td><a href="{param_id}.txt">output</a></td> \
-<td><a href="{diff_filename}">diff</a></td> \
-<td><a href="{param_id}.cfg">config</a></td> \
+<td><a href="{file_output}">output</a></td> \
+<td><a href="{diff_output}">diff</a></td> \
+<td><a href="{config_output}">config</a></td> \
 </tr>
 """
-    content += """\
+        content += """\
     </table>
+"""
+
+    content += """\
 </body>
 </html>
 """

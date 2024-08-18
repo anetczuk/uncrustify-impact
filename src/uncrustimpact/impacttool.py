@@ -10,6 +10,7 @@ import os
 import logging
 import copy
 import re
+from collections import Counter
 
 # import random
 
@@ -30,11 +31,6 @@ from uncrustimpact.printhtml import print_to_html, print_param_page, generate_pa
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def call_uncrustify(params_base_cfg_dict, base_file_path, out_cfg_path, out_file_path):
-    write_dict_to_cfg(params_base_cfg_dict, out_cfg_path)
-    execute_uncrustify(base_file_path, out_cfg_path, out_file_path)
 
 
 def execute_uncrustify(input_file_path, base_config_path, out_file_path):
@@ -67,8 +63,15 @@ def calculate_impact(
         _LOGGER.info("using default params space")
         params_space_dict = get_default_params_space()
 
+    _LOGGER.info("generating config files")
+    param_list = generate_config_files(
+        base_config_path, output_base_dir_path, params_space_dict, ignore_params, consider_params
+    )
+
     path_prefix_len = get_common_prefix_len(input_base_file_set)
 
+    _LOGGER.info("calculating files impact")
+    unused_cfg_counter = Counter()
     files_stats = {}
     with Pool() as process_pool:
         result_queue = []
@@ -80,15 +83,22 @@ def calculate_impact(
 
             # execute uncrustify in separate thread
             async_result = process_pool.apply_async(
-                calculate_impact_file,
-                [file_path, base_config_path, file_dir_path, params_space_dict, ignore_params, consider_params],
+                calculate_impact_file, [file_path, base_config_path, param_list, file_dir_path]
             )
             result_queue.append((file_rel_path, async_result))
 
         # wait for results
         for file_rel_path, async_result in result_queue:
-            file_index_path, param_stats = async_result.get()
+            file_index_path, param_stats, unused_configs = async_result.get()
             files_stats[file_rel_path] = (file_index_path, sum(param_stats.values()))
+            unused_cfg_counter.update(unused_configs)
+
+    # remove unused configs
+    _LOGGER.info("removing unused configs")
+    total_files = len(input_base_file_set)
+    for cfg_path, cfg_count in unused_cfg_counter.items():
+        if cfg_count >= total_files:
+            os.remove(cfg_path)
 
     files_stats = dict(sorted(files_stats.items(), key=lambda item: (-item[1][1], item[0])))
 
@@ -97,14 +107,7 @@ def calculate_impact(
     print_files_page(files_stats, out_path)
 
 
-def calculate_impact_file(
-    input_base_file_path,
-    base_config_path,
-    output_base_dir_path,
-    params_space_dict=None,
-    ignore_params=None,
-    consider_params=None,
-):
+def calculate_impact_file(input_base_file_path, base_config_path, param_list, output_base_dir_path):
     _LOGGER.info("handling file %s", input_base_file_path)
 
     params_dir_path = os.path.join(output_base_dir_path, "params")
@@ -115,65 +118,24 @@ def calculate_impact_file(
     base_file_path = os.path.join(output_base_dir_path, input_filename)
     execute_uncrustify(input_base_file_path, base_config_path, base_file_path)
 
-    ignore_params_set = set()
-    if ignore_params:
-        ignore_params_set = set(ignore_params)
-
-    consider_params_set = set()
-    if consider_params:
-        consider_params_set = set(consider_params)
-
-    # if random_seed is not None:
-    #     random.seed(random_seed)
-
     with open(base_file_path, encoding="utf-8") as file_1:
         filebase_text = file_1.readlines()
 
-    params_base_cfg_dict = read_params_space(base_config_path)
-    # pprint.pprint(params_base_cfg_dict)
-    ## convert to standard config dict
-    params_base_cfg_dict = {key: subdict["value"] for key, subdict in params_base_cfg_dict.items()}
-
     changes = Changes("base", filebase_text)
 
-    params_stats = {}
-
-    param_list = []
-    for param_name, param_def in params_space_dict.items():
-        if param_name in ignore_params_set:
-            # ignore parameter
-            continue
-        if consider_params_set:
-            if param_name not in consider_params_set:
-                # ignore parameter
-                continue
-
-        base_param_value = params_base_cfg_dict.get(param_name)
-        param_values = generate_param_values(base_param_value, param_def)
-        if not param_values:
-            # params not changed -- skip
-            continue
-
-        param_list.append((param_name, param_def, param_values, base_param_value))
-
-    with ThreadPool() as thread_pool:
+    with ThreadPool() as process_pool:
         result_queue = []
         for param_item in param_list:
-            param_name = param_item[0]
             param_values = param_item[2]
 
-            for param_val in param_values:
-                param_id = f"{param_name}-{param_val}"
-                out_cfg_path = os.path.join(params_dir_path, f"{param_id}.cfg")
+            for param_data in param_values:
+                param_id = param_data[1]
+                out_cfg_path = param_data[2]
                 out_file_path = os.path.join(params_dir_path, f"{param_id}.txt")
 
-                curr_cfg_dict = copy.copy(params_base_cfg_dict)
-                # curr_cfg_dict = copy.deepcopy(params_base_cfg_dict)
-                curr_cfg_dict[param_name] = param_val
-
                 # execute uncrustify in separate thread
-                async_result = thread_pool.apply_async(
-                    call_uncrustify, [curr_cfg_dict, base_file_path, out_cfg_path, out_file_path]
+                async_result = process_pool.apply_async(
+                    execute_uncrustify, [base_file_path, out_cfg_path, out_file_path]
                 )
                 result_queue.append(async_result)
 
@@ -181,6 +143,10 @@ def calculate_impact_file(
         for async_result in result_queue:
             async_result.get()
 
+    _LOGGER.info("calculating stats for file %s", input_base_file_path)
+    params_stats = {}
+
+    unused_configs = []
     for param_item in param_list:
         param_name = param_item[0]
         param_def = param_item[1]
@@ -188,10 +154,13 @@ def calculate_impact_file(
         base_param_value = param_item[3]
 
         param_val_list = []
-        for param_val in param_values:
-            param_id = f"{param_name}-{param_val}"
-            out_cfg_path = os.path.join(params_dir_path, f"{param_id}.cfg")
-            out_file_path = os.path.join(params_dir_path, f"{param_id}.txt")
+
+        for param_data in param_values:
+            param_val = param_data[0]
+            param_id = param_data[1]
+            out_cfg_path = param_data[2]
+            out_filename = f"{param_id}.txt"
+            out_file_path = os.path.join(params_dir_path, out_filename)
 
             with open(out_file_path, encoding="utf-8") as item_file:
                 item_text = item_file.readlines()
@@ -200,7 +169,8 @@ def calculate_impact_file(
 
             if not changed:
                 # remove unused files
-                os.remove(out_cfg_path)
+                # os.remove(out_cfg_path)
+                unused_configs.append(out_cfg_path)
                 os.remove(out_file_path)
                 continue
 
@@ -211,7 +181,8 @@ def calculate_impact_file(
             with open(out_diff_path, "w", encoding="utf-8") as out_file:
                 out_file.write(raw_diff)
 
-            param_val_list.append((param_val, param_id, diff_filename))
+            cfg_relative_path = os.path.relpath(out_cfg_path, params_dir_path)
+            param_val_list.append((param_val, cfg_relative_path, out_filename, diff_filename))
 
         param_changes = changes.count_changes(param_name)
         params_stats[param_name] = param_changes
@@ -242,8 +213,60 @@ def calculate_impact_file(
         out_file.write(content)
 
     _LOGGER.info("output stored to: file://%s", out_path)
+    return out_path, params_stats, unused_configs
 
-    return out_path, params_stats
+
+def generate_config_files(
+    base_config_path, output_base_dir_path, params_space_dict=None, ignore_params=None, consider_params=None
+):
+    params_dir_path = os.path.join(output_base_dir_path, "config")
+    os.makedirs(params_dir_path, exist_ok=True)
+
+    ignore_params_set = set()
+    if ignore_params:
+        ignore_params_set = set(ignore_params)
+
+    consider_params_set = set()
+    if consider_params:
+        consider_params_set = set(consider_params)
+
+    params_base_cfg_dict = read_params_space(base_config_path)
+    # pprint.pprint(params_base_cfg_dict)
+    ## convert to standard config dict
+    params_base_cfg_dict = {key: subdict["value"] for key, subdict in params_base_cfg_dict.items()}
+
+    param_list = []
+    for param_name, param_def in params_space_dict.items():
+        if param_name in ignore_params_set:
+            # ignore parameter
+            continue
+        if consider_params_set:
+            if param_name not in consider_params_set:
+                # ignore parameter
+                continue
+
+        base_param_value = params_base_cfg_dict.get(param_name)
+        param_values = generate_param_values(base_param_value, param_def)
+        if not param_values:
+            # params not changed -- skip
+            continue
+
+        params_data = []
+        for param_val in param_values:
+            param_id = f"{param_name}-{param_val}"
+            out_cfg_path = os.path.join(params_dir_path, f"{param_id}.cfg")
+            params_data.append((param_val, param_id, out_cfg_path))
+
+            curr_cfg_dict = copy.copy(params_base_cfg_dict)
+            # curr_cfg_dict = copy.deepcopy(params_base_cfg_dict)
+            curr_cfg_dict[param_name] = param_val
+
+            # execute uncrustify in separate thread
+            write_dict_to_cfg(curr_cfg_dict, out_cfg_path)
+
+        param_list.append((param_name, param_def, params_data, base_param_value))
+
+    return param_list
 
 
 def generate_param_values(curr_param_value, param_def_dict):

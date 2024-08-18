@@ -160,7 +160,9 @@ def main():
         print(", ".join(tools_list))
         return 0
 
-    logging.basicConfig()
+    # logging.basicConfig()
+    logging.basicConfig(format="%(asctime)s.%(msecs)03d %(levelname)-8s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+
     if args.logall is True:
         logging.getLogger().setLevel(logging.DEBUG)
     else:
