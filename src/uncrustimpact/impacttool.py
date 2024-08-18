@@ -11,11 +11,13 @@ import logging
 import copy
 import re
 from collections import Counter
+import json
 
-# import random
-
-from multiprocessing.pool import ThreadPool
 from multiprocessing import Pool
+from multiprocessing.pool import ThreadPool
+
+# from uncrustimpact.multiprocessingmock import DummyPool as Pool
+# from uncrustimpact.multiprocessingmock import DummyPool as ThreadPool
 
 from uncrustimpact.filediff import Changes
 from uncrustimpact.cfgparser import (
@@ -67,6 +69,9 @@ def calculate_impact(
     param_list = generate_config_files(
         base_config_path, output_base_dir_path, params_space_dict, ignore_params, consider_params
     )
+    params_list_path = os.path.join(output_base_dir_path, "config", "params_list.json")
+    with open(params_list_path, mode="w", encoding="utf-8") as params_file:
+        json.dump(param_list, params_file)
 
     path_prefix_len = get_common_prefix_len(input_base_file_set)
 
@@ -83,7 +88,7 @@ def calculate_impact(
 
             # execute uncrustify in separate thread
             async_result = process_pool.apply_async(
-                calculate_impact_file, [file_path, base_config_path, param_list, file_dir_path]
+                calculate_impact_file, [file_path, base_config_path, params_list_path, file_dir_path]
             )
             result_queue.append((file_rel_path, async_result))
 
@@ -110,6 +115,10 @@ def calculate_impact(
 def calculate_impact_file(input_base_file_path, base_config_path, param_list, output_base_dir_path):
     _LOGGER.info("handling file %s", input_base_file_path)
 
+    if isinstance(param_list, str):
+        with open(param_list, encoding="utf-8") as params_file:
+            param_list = json.load(params_file)
+
     params_dir_path = os.path.join(output_base_dir_path, "params")
     os.makedirs(params_dir_path, exist_ok=True)
     input_filename = os.path.basename(input_base_file_path)
@@ -124,7 +133,7 @@ def calculate_impact_file(input_base_file_path, base_config_path, param_list, ou
     changes = Changes("base", filebase_text)
 
     with ThreadPool() as process_pool:
-        result_queue = []
+        tasks_data = []
         for param_item in param_list:
             param_values = param_item[2]
 
@@ -132,16 +141,9 @@ def calculate_impact_file(input_base_file_path, base_config_path, param_list, ou
                 param_id = param_data[1]
                 out_cfg_path = param_data[2]
                 out_file_path = os.path.join(params_dir_path, f"{param_id}.txt")
+                tasks_data.append([base_file_path, out_cfg_path, out_file_path])
 
-                # execute uncrustify in separate thread
-                async_result = process_pool.apply_async(
-                    execute_uncrustify, [base_file_path, out_cfg_path, out_file_path]
-                )
-                result_queue.append(async_result)
-
-        # wait for results
-        for async_result in result_queue:
-            async_result.get()
+        process_pool.starmap(execute_uncrustify, tasks_data)
 
     _LOGGER.info("calculating stats for file %s", input_base_file_path)
     params_stats = {}

@@ -209,7 +209,7 @@ class FileState:
             ret_dict[index] = item
         return ret_dict
 
-    def parse_diff(self, label_name, diff_list):
+    def parse_diff(self, label_name, diff_list) -> bool:
         ### According to documentation:
         #
         # Each line of a Differ delta begins with a two-letter code:
@@ -305,7 +305,7 @@ class Changes:
 
         return self.file_state.parse_diff(file_name, diff_list)
 
-    def parse_diff(self, label_name, diff_list):
+    def parse_diff(self, label_name, diff_list) -> bool:
         return self.file_state.parse_diff(label_name, diff_list)
 
     def to_dict_raw(self):

@@ -18,7 +18,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 @unique
-class ParamType(Enum):
+class ParamType(str, Enum):
     STRING = "string"
     INTEGER = "integer"
     UNSIGNED = "unsigned"

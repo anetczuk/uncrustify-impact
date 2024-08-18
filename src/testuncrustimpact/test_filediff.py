@@ -23,7 +23,27 @@
 
 import unittest
 
-from uncrustimpact.filediff import Changes
+from uncrustimpact.filediff import Changes, LineModifiers, LineModifier
+
+
+class LineModifiersTest(unittest.TestCase):
+    def setUp(self):
+        ## Called before testfunction is executed
+        pass
+
+    def tearDown(self):
+        ## Called after testfunction was executed
+        pass
+
+    def test_add(self):
+        modifiers = LineModifiers()
+
+        modifiers.add_state("xxx", LineModifier.ADDED)
+        modifiers.add_state("xxx", LineModifier.ADDED)
+        modifiers.add_state("xxx", LineModifier.CHANGED)
+
+        changes = modifiers.count_changes("xxx")
+        self.assertEqual(2, changes)
 
 
 class DiffTest(unittest.TestCase):
