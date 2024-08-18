@@ -21,17 +21,20 @@ uncrustify -c $SCRIPT_DIR/override.cfg --update-config-with-doc > $SCRIPT_DIR/co
 cd $SCRIPT_DIR/../../src/
 
 
+ARGS=()
+ARGS+=(impact)
+ARGS+=(--file $SCRIPT_DIR/example.cpp)
+ARGS+=(--config $SCRIPT_DIR/config.cfg)
+ARGS+=(--outputdir $OUT_DIR)
+ARGS+=(--ignoreparams code_width cmt_width indent_columns)
+
+
 if [[ $* == *--profile* ]]; then
-	../tools/profiler.sh \
-	-m uncrustimpact impact --file $SCRIPT_DIR/example.cpp \
-							--config $SCRIPT_DIR/config.cfg \
-							--outputdir $OUT_DIR \
-							--ignoreparams code_width cmt_width indent_columns
+ 	../tools/profiler.sh --cprofile -m \
+	uncrustimpact ${ARGS[@]}
 else
-	python3 -m uncrustimpact impact --file $SCRIPT_DIR/example.cpp \
-									--config $SCRIPT_DIR/config.cfg \
-									--outputdir $OUT_DIR \
-									--ignoreparams code_width cmt_width indent_columns
+	python3 -m \
+	uncrustimpact ${ARGS[@]}
 fi
 
 
