@@ -25,23 +25,23 @@ while :; do
       --vizviewer)  PROFILER="vizviewer" 
                     shift ;;
 
-      *)  ARGS+=($1)
+      *)  ARGS+=("$1")
           shift ;;
     esac
 done
 
 
 if [ "$PROFILER" == "cprofile" ]; then
-	tmpdir=$(dirname $(mktemp -u))
+	tmpdir=$(dirname "$(mktemp -u)")
 	timestamp=$(date +%s)
 
-	out_file=$(mktemp ${tmpdir}/out.${timestamp}.XXXXXX.prof)
+	out_file=$(mktemp "${tmpdir}/out.${timestamp}.XXXXXX.prof")
 	#out_file="$(pwd)/out.prof"
 
 	echo "Starting cprofile"
-	echo "executing: python3 -m cProfile -o $out_file ${ARGS[@]}"
+	echo "executing: python3 -m cProfile -o $out_file ${ARGS[*]}"
 
-	python3 -m cProfile -o $out_file ${ARGS[@]}
+	python3 -m cProfile -o "$out_file" "${ARGS[@]}"
 
 	echo ""
 	echo "View output: pyprof2calltree -k -i $out_file"
@@ -53,16 +53,16 @@ if [ "$PROFILER" == "cprofile" ]; then
 fi
 
 if [ "$PROFILER" == "mtprof" ]; then
-	tmpdir=$(dirname $(mktemp -u))
+	tmpdir=$(dirname "$(mktemp -u)")
 	timestamp=$(date +%s)
 
-	out_file=$(mktemp ${tmpdir}/out.${timestamp}.XXXXXX.prof)
+	out_file=$(mktemp "${tmpdir}/out.${timestamp}.XXXXXX.prof")
 	#out_file="$(pwd)/out.prof"
 
 	echo "Starting mtprof"
-	echo "executing: python3 -m mtprof -o $out_file ${ARGS[@]}"
+	echo "executing: python3 -m mtprof -o $out_file ${ARGS[*]}"
 
-	python3 -m mtprof -o $out_file ${ARGS[@]}
+	python3 -m mtprof -o "$out_file" "${ARGS[@]}"
 
 	echo ""
 	echo "View output: pyprof2calltree -k -i $out_file"
@@ -74,16 +74,16 @@ if [ "$PROFILER" == "mtprof" ]; then
 fi
 
 if [ "$PROFILER" == "vizviewer" ]; then
-	tmpdir=$(dirname $(mktemp -u))
+	tmpdir=$(dirname "$(mktemp -u)")
 	timestamp=$(date +%s)
 
-	out_file=$(mktemp ${tmpdir}/report.${timestamp}.XXXXXX.json)
+	out_file=$(mktemp "${tmpdir}/report.${timestamp}.XXXXXX.json")
 	#out_file="$(pwd)/out.prof"
 
 	echo "Starting vizviewer"
-	echo "executing: viztracer -o $out_file ${ARGS[@]}"
+	echo "executing: viztracer -o $out_file ${ARGS[*]}"
 
-	viztracer -o $out_file ${ARGS[@]}
+	viztracer -o "$out_file" "${ARGS[@]}"
 
 	exit 0
 fi

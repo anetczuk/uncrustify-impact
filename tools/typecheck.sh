@@ -27,6 +27,7 @@ src_examples=$(find "$src_dir" -type f -name "*.py")
 
 echo "running mypy"
 echo "ignore line warning using: # type: ignore"
-mypy --cache-dir $CACHE_DIR --no-strict-optional --ignore-missing-imports --pretty $src_examples $all_examples
+# shellcheck disable=SC2086
+mypy --cache-dir "$CACHE_DIR" --no-strict-optional --ignore-missing-imports --pretty $src_examples $all_examples
 
 echo "mypy finished"

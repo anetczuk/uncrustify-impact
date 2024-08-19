@@ -7,4 +7,5 @@ SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
 
 ## 'source' is somehow simillar to C 'include'
-source $SCRIPT_DIR/../doc/generate_small.sh
+# shellcheck disable=SC1090
+source "$SCRIPT_DIR/../doc/generate_small.sh"

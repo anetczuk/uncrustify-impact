@@ -12,10 +12,12 @@ set -eu
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
 
-big_suffix="-big."
+#big_suffix="-big."
 small_suffix="-small."
 
-for filename in $(find $SCRIPT_DIR -name "*.png"); do
+found_images=$(find "$SCRIPT_DIR" -name "*.png")
+# shellcheck disable=SC2068
+for filename in ${found_images[@]}; do
     if [[ $filename == *"$small_suffix"* ]]; then
         continue
     fi
@@ -27,5 +29,5 @@ for filename in $(find $SCRIPT_DIR -name "*.png"); do
     ##small_name=${filename/$big_suffix/$small_suffix}
 
     echo "converting: $filename -> $small_name"
-    convert $filename -strip -resize 700 $small_name
+    convert "$filename" -strip -resize 700 "$small_name"
 done

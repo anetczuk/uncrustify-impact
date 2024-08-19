@@ -24,7 +24,7 @@ ignore_errors=D100,D101,D102,D103,D104,D105,D107
 
 
 echo "running pydocstyle"
-python3 -m pydocstyle --count --convention=numpy --add-ignore=$ignore_errors $src_dir $examples_dir $SCRIPT_DIR
+python3 -m pydocstyle --count --convention=numpy --add-ignore="$ignore_errors" "$src_dir" "$examples_dir" "$SCRIPT_DIR"
 # pydocstyle --count --ignore=$ignore_errors $src_dir
 exit_code=$?
 
@@ -43,11 +43,11 @@ disabled() {
 
 echo "running darglint"
 
-src_files=$(find $src_dir -name "*.py")
-examples_files=$(find $examples_dir -name "*.py")
-local_files=$(find $SCRIPT_DIR -name "*.py")
+src_files=$(find "$src_dir" -name "*.py")
+examples_files=$(find "$examples_dir" -name "*.py")
+local_files=$(find "$SCRIPT_DIR" -name "*.py")
 
-darglint $src_files $examples_files $local_files
+darglint "${src_files[@]}" "${examples_files[@]}" "${local_files[@]}"
 exit_code=$?
 
 if [ $exit_code -ne 0 ]; then

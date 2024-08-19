@@ -35,8 +35,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _LOGGER = logging.getLogger(__name__)
 
 
-def execute_uncrustify(input_file_path, base_config_path, out_file_path):
-    command = f"uncrustify -q -c {base_config_path} --no-backup -f {input_file_path} -o {out_file_path}"
+def execute_uncrustify(input_file_path, input_config_path, out_file_path):
+    command = f"uncrustify -q -c {input_config_path} --no-backup -f {input_file_path} -o {out_file_path}"
     error_code = os.system(command)  # nosec
     if error_code != 0:
         _LOGGER.error("unable to execute command: %s", command)
@@ -127,25 +127,15 @@ def calculate_impact_file(input_base_file_path, base_config_path, param_list, ou
     base_file_path = os.path.join(output_base_dir_path, input_filename)
     execute_uncrustify(input_base_file_path, base_config_path, base_file_path)
 
+    generate_file_variants(base_file_path, param_list, params_dir_path)
+
+    _LOGGER.info("calculating stats for file %s", input_base_file_path)
+
     with open(base_file_path, encoding="utf-8") as file_1:
         filebase_text = file_1.readlines()
 
     changes = Changes("base", filebase_text)
 
-    with ThreadPool() as process_pool:
-        tasks_data = []
-        for param_item in param_list:
-            param_values = param_item[2]
-
-            for param_data in param_values:
-                param_id = param_data[1]
-                out_cfg_path = param_data[2]
-                out_file_path = os.path.join(params_dir_path, f"{param_id}.txt")
-                tasks_data.append([base_file_path, out_cfg_path, out_file_path])
-
-        process_pool.starmap(execute_uncrustify, tasks_data)
-
-    _LOGGER.info("calculating stats for file %s", input_base_file_path)
     params_stats = {}
 
     unused_configs = []
@@ -291,6 +281,21 @@ def generate_param_values(curr_param_value, param_def_dict):
             return None
         return list(allowed_list)
     raise RuntimeError(f"unahandled param type: {param_type} {type(param_type)}")
+
+
+def generate_file_variants(input_file_path, param_list, output_dir):
+    tasks_data = []
+    for param_item in param_list:
+        param_values = param_item[2]
+
+        for param_data in param_values:
+            param_id = param_data[1]
+            input_cfg_path = param_data[2]
+            out_file_path = os.path.join(output_dir, f"{param_id}.txt")
+            tasks_data.append([input_file_path, input_cfg_path, out_file_path])
+
+    with ThreadPool() as process_pool:
+        process_pool.starmap(execute_uncrustify, tasks_data)
 
 
 def labels_to_links(labels_list):
