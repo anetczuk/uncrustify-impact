@@ -20,7 +20,7 @@ uncrustify -c "$SCRIPT_DIR/override.cfg" --update-config-with-doc > "$SCRIPT_DIR
 
 cd "$SCRIPT_DIR/../../src/"
 
-python3 -m uncrustimpact impact --file "$SCRIPT_DIR/example.cpp" \
+python3 -m uncrustimpact impact --files "$SCRIPT_DIR/example.cpp" \
 								--config "$SCRIPT_DIR/config.cfg" \
 								--paramsspace "$SCRIPT_DIR/params_space.json" \
 								--overridedefparamsspace \

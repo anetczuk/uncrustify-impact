@@ -17,6 +17,7 @@ from glob import glob
 from uncrustimpact.cfgparser import print_params_space
 from uncrustimpact.impacttool import calculate_impact
 from uncrustimpact.difftool import calculate_diff
+from uncrustimpact.fittool import calculate_fit
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -36,8 +37,6 @@ def calculate_impact_tool(args):
     _LOGGER.info("Starting impact calculation")
 
     files_set = find_files(args.dir, args.extlist)
-    if args.file:
-        files_set.add(args.file)
     if args.files:
         files_set.update(args.files)
 
@@ -69,6 +68,31 @@ def calculate_diff_tool(args):
     input_config_path = args.config
     output_dir_path = args.outputdir
     calculate_diff(files_set, input_config_path, output_dir_path)
+    _LOGGER.info("Completed")
+
+
+def calculate_fit_tool(args):
+    _LOGGER.info("Starting fit calculation")
+
+    files_set = find_files(args.dir, args.extlist)
+    if args.files:
+        files_set.update(args.files)
+
+    input_config_path = args.config
+    output_dir_path = args.outputdir
+    params_space_path = args.paramsspace
+    override_def_params_space = args.overridedefparamsspace
+    ignore_params = args.ignoreparams
+    consider_params = args.considerparams
+    calculate_fit(
+        files_set,
+        input_config_path,
+        output_dir_path,
+        params_space_path=params_space_path,
+        override_def_params_space=override_def_params_space,
+        ignore_params=ignore_params,
+        consider_params=consider_params,
+    )
     _LOGGER.info("Completed")
 
 
@@ -116,7 +140,6 @@ def main():
     )
     subparser.description = description
     subparser.set_defaults(func=calculate_impact_tool)
-    subparser.add_argument("--file", action="store", help="File to analyze")  # backward compatibility
     subparser.add_argument("-f", "--files", nargs="+", default=[], help="Files to analyze")
     subparser.add_argument("-d", "--dir", action="store", help="Path to directory to search for files")
     subparser.add_argument(
@@ -150,6 +173,29 @@ def main():
     )
     subparser.add_argument("-c", "--config", action="store", required=True, help="Base uncrustify config")
     subparser.add_argument("-od", "--outputdir", action="store", required=True, help="Output directory")
+
+    ## =================================================
+
+    description = "find config to make smallest impact on files"
+    subparser = subparsers.add_parser("fit", help=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    subparser.description = description
+    subparser.set_defaults(func=calculate_fit_tool)
+    subparser.add_argument("-f", "--files", nargs="+", default=[], help="Files to analyze")
+    subparser.add_argument("-d", "--dir", action="store", help="Path to directory to search for files")
+    subparser.add_argument(
+        "--extlist",
+        nargs="+",
+        default=[".h", ".hpp", ".c", "cpp"],
+        help="List of extensions to look for (in case of --dir)",
+    )
+    subparser.add_argument("-c", "--config", action="store", required=True, help="Base uncrustify config")
+    subparser.add_argument("-od", "--outputdir", action="store", required=True, help="Output directory")
+    subparser.add_argument("-ps", "--paramsspace", action="store", help="Path to params space config JSON")
+    subparser.add_argument(
+        "-odps", "--overridedefparamsspace", action="store_true", help="Override default params space with given one"
+    )
+    subparser.add_argument("-ip", "--ignoreparams", nargs="+", default=[], help="Parameters list to ignore")
+    subparser.add_argument("-cp", "--considerparams", nargs="+", default=[], help="Parameters list to consider")
 
     ## =================================================
 

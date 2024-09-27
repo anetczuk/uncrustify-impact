@@ -36,7 +36,7 @@ Execute following command `python3 -m uncrustimpact --help` to receive [cmd help
 Simple command run example:
 
 ```
-python3 -m uncrustimpact impact --file {path-to-C++-file} \
+python3 -m uncrustimpact impact --files {path-to-C++-file} \
                                 --config {path-to-uncrustify-config} \
                                 --outputdir {output-directory}
 ```

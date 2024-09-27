@@ -103,8 +103,7 @@ def print_to_html(changes: Changes, label_converter=None, top_content=None, bott
     return ret_content
 
 
-# print_param_page(param_name, param_val_list, param_base_value, uncrust_dir_path)
-def print_files_page(files_stats_dict, output_path):
+def print_impact_page(files_stats_dict, output_path):
     output_dir = os.path.dirname(output_path)
     output_dir_len = len(output_dir)
     if output_dir_len > 0:
@@ -143,8 +142,7 @@ def print_files_page(files_stats_dict, output_path):
         out_file.write(content)
 
 
-# print_param_page(param_name, param_val_list, param_base_value, uncrust_dir_path)
-def print_param_page(param_name, param_data_list, param_prev_value, param_def, changed_lines, output_dir):
+def print_impactparam_page(param_name, param_data_list, param_prev_value, param_def, changed_lines, output_dir):
     value_set_text = ""
     if param_def["type"] == ParamType.SET:
         allowed_list = sorted(param_def["allowed"])
@@ -241,3 +239,112 @@ def generate_params_stats(params_stats_dict, label_to_link=None):
 """
 
     return ret_content
+
+
+# ===============================================================
+
+
+def print_fit_page(best_cfg_path, best_fit, output_path):
+    output_dir = os.path.dirname(output_path)
+    output_dir_len = len(output_dir)
+    if output_dir_len > 0:
+        output_dir_len += 1  # include slash
+
+    content = f"""\
+<html>
+<head>
+</head>
+<body>
+    <div><b>Best config:</b> <a href="{best_cfg_path}">config</a></div>
+
+    <table style="margin-top: 12px">
+        <tr style="text-align: left;">  <th>Parameter with impact:</th> <th>Best value:</th> <th>Smallest num of changes:</th>  </tr>
+"""
+
+    for key, item in best_fit.items():
+        ## we want to show all parameters, those with 0 changes too
+        is_changed = item[1]
+        if is_changed is False:
+            continue
+        param_page_path = item[3]
+        content += f"""\
+        <tr> \
+<td><a href="{param_page_path}">{key}</a></td> \
+<td>{item[0]}</td> \
+<td>{item[2]}</td> \
+</tr>
+"""
+
+    content += """\
+    </table>
+</body>
+</html>
+"""
+    with open(output_path, "w", encoding="utf-8") as out_file:
+        out_file.write(content)
+
+
+def print_fitparam_page(param_item, best_value, param_results, output_file_path):
+    param_name = param_item[0]
+    param_def = param_item[1]
+    cfg_value = param_item[3]
+
+    value_set_text = ""
+    if param_def["type"] == ParamType.SET:
+        allowed_list = sorted(param_def["allowed"])
+        allowed_list = " ".join(allowed_list)
+        value_set_text = f"""<tr> <td>Allowed values:</td>      <td>{allowed_list}</td> </tr>"""
+
+    param_doc_text = ""
+    if "doc" in param_def:
+        param_doc_text = f"""<tr> <td>Doc:</td>            <td><pre>{param_def["doc"]}</pre></td>   </tr>"""
+
+    content = f"""\
+<html>
+<head>
+</head>
+<body>
+    <table>
+        <tr> <td>Parameter:</td>      <td><b>{param_name}</b></td>  </tr>
+        <tr> <td>Type:</td>           <td>{param_def["type"]}</td>  </tr>
+        {value_set_text}
+        <tr> <td>Default value:</td>  <td>{param_def["value"]}</td> </tr>
+        <tr> <td>Config value:</td>   <td>{cfg_value}</td> </tr>
+        <tr> <td>Best value:</td>     <td>{best_value}</td> </tr>
+        {param_doc_text}
+    </table>
+"""
+
+    if param_results:
+        content += """\
+    <table>
+        <tr>
+            <th>New value:</th>
+            <th>Changed lines:</th>
+        </tr>
+"""
+
+        for param_changes_counter, param_data in param_results:
+            param_val = param_data[0]
+            param_dir = param_val
+            # param_dir = param_data[1]
+            change_link = f"""<a href="{param_dir}/index.html">{param_changes_counter}</a>"""
+
+            diff_link = f"""{param_dir}/diff.txt"""
+            content += f"""\
+        <tr> \
+<td>{param_val}</td> \
+<td>{change_link}</td> \
+<td><a href="{diff_link}">diff</a></td> \
+</tr>
+"""
+        content += """\
+    </table>
+"""
+
+    content += """\
+</body>
+</html>
+"""
+    with open(output_file_path, "w", encoding="utf-8") as out_file:
+        out_file.write(content)

@@ -15,7 +15,7 @@ from multiprocessing import Pool
 
 from uncrustimpact.filediff import Changes
 from uncrustimpact.cfgparser import read_params_space
-from uncrustimpact.printhtml import print_to_html, print_files_page
+from uncrustimpact.printhtml import print_to_html, print_impact_page
 from uncrustimpact.impacttool import (
     labels_to_links,
     name_to_diff_filename,
@@ -59,7 +59,7 @@ def calculate_diff(input_base_file_set, base_config_path, output_base_dir_path):
 
     out_path = os.path.join(output_base_dir_path, "index.html")
     _LOGGER.info("writing main page in file://%s", out_path)
-    print_files_page(files_stats, out_path)
+    print_impact_page(files_stats, out_path)
 
 
 def calculate_diff_file(input_base_file_path, base_config_path, output_base_dir_path):
@@ -97,7 +97,18 @@ def calculate_diff_file(input_base_file_path, base_config_path, output_base_dir_
     with open(out_diff_path, "w", encoding="utf-8") as out_file:
         out_file.write(raw_diff)
 
-    top_content = f"""\
+    out_path = os.path.join(output_base_dir_path, "index.html")
+    print_diff_page(changes, out_path, input_filename)
+
+    _LOGGER.info("output stored to: file://%s", out_path)
+    total_changes = changes.count_changed_lines()
+    return out_path, total_changes
+
+
+def print_diff_page(changes: Changes, out_path, input_filename=None):
+    top_content = None
+    if input_filename is not None:
+        top_content = f"""\
 <div><b>Base file:</b> <a href="{input_filename}">{input_filename}</a></div>
 """
 
@@ -110,9 +121,5 @@ def calculate_diff_file(input_base_file_path, base_config_path, output_base_dir_
     content = print_to_html(
         changes, label_converter=labels_to_links, top_content=top_content, bottom_content=bottom_content
     )
-    out_path = os.path.join(output_base_dir_path, "index.html")
     with open(out_path, "w", encoding="utf-8") as out_file:
         out_file.write(content)
-
-    _LOGGER.info("output stored to: file://%s", out_path)
-    return out_path, total_changes

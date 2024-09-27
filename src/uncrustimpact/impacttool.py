@@ -20,14 +20,8 @@ from multiprocessing.pool import ThreadPool
 # from uncrustimpact.multiprocessingmock import DummyPool as ThreadPool
 
 from uncrustimpact.filediff import Changes
-from uncrustimpact.cfgparser import (
-    get_default_params_space,
-    read_params_space,
-    write_dict_to_cfg,
-    ParamType,
-    load_params_space_json,
-)
-from uncrustimpact.printhtml import print_to_html, print_param_page, generate_params_stats, print_files_page
+from uncrustimpact.cfgparser import write_dict_to_cfg, ParamType, prepare_params_space_dict, read_cfg_to_dict
+from uncrustimpact.printhtml import print_to_html, print_impactparam_page, generate_params_stats, print_impact_page
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -54,24 +48,16 @@ def calculate_impact(
 ):
     os.makedirs(output_base_dir_path, exist_ok=True)
 
-    params_space_dict = None
-    if params_space_path:
-        _LOGGER.info("using params space from file: %s", params_space_path)
-        params_space_dict = load_params_space_json(params_space_path)
-        if override_def_params_space:
-            def_space_dict = get_default_params_space()
-            params_space_dict = {**def_space_dict, **params_space_dict}
-    else:
-        _LOGGER.info("using default params space")
-        params_space_dict = get_default_params_space()
+    params_space_dict = prepare_params_space_dict(params_space_path, override_def_params_space)
 
     _LOGGER.info("generating config files")
+    output_config_dir_path = os.path.join(output_base_dir_path, "config")
     param_list = generate_config_files(
-        base_config_path, output_base_dir_path, params_space_dict, ignore_params, consider_params
+        base_config_path, output_config_dir_path, params_space_dict, ignore_params, consider_params
     )
-    params_list_path = os.path.join(output_base_dir_path, "config", "params_list.json")
-    with open(params_list_path, mode="w", encoding="utf-8") as params_file:
-        json.dump(param_list, params_file)
+    # params_list_path = os.path.join(output_base_dir_path, "config", "params_list.json")
+    # with open(params_list_path, mode="w", encoding="utf-8") as params_file:
+    #     json.dump(param_list, params_file)
 
     path_prefix_len = get_common_prefix_len(input_base_file_set)
 
@@ -88,7 +74,7 @@ def calculate_impact(
 
             # execute uncrustify in separate thread
             async_result = process_pool.apply_async(
-                calculate_impact_file, [file_path, base_config_path, params_list_path, file_dir_path]
+                calculate_impact_file, [file_path, base_config_path, param_list, file_dir_path]
             )
             result_queue.append((file_rel_path, async_result))
 
@@ -109,7 +95,7 @@ def calculate_impact(
 
     out_path = os.path.join(output_base_dir_path, "index.html")
     _LOGGER.info("writing main page in file://%s", out_path)
-    print_files_page(files_stats, out_path)
+    print_impact_page(files_stats, out_path)
 
 
 def calculate_impact_file(input_base_file_path, base_config_path, param_list, output_base_dir_path):
@@ -167,9 +153,9 @@ def calculate_impact_file(input_base_file_path, base_config_path, param_list, ou
                 continue
 
             # write files diff to file
-            raw_diff = "".join(raw_diff)
             diff_filename = name_to_diff_filename(param_id)
             out_diff_path = os.path.join(params_dir_path, diff_filename)
+            raw_diff = "".join(raw_diff)
             with open(out_diff_path, "w", encoding="utf-8") as out_file:
                 out_file.write(raw_diff)
 
@@ -180,7 +166,7 @@ def calculate_impact_file(input_base_file_path, base_config_path, param_list, ou
         params_stats[param_name] = param_changes
 
         # write parameter page
-        print_param_page(param_name, param_val_list, base_param_value, param_def, param_changes, params_dir_path)
+        print_impactparam_page(param_name, param_val_list, base_param_value, param_def, param_changes, params_dir_path)
 
     # changes.print_diff()
 
@@ -209,10 +195,15 @@ def calculate_impact_file(input_base_file_path, base_config_path, param_list, ou
 
 
 def generate_config_files(
-    base_config_path, output_base_dir_path, params_space_dict=None, ignore_params=None, consider_params=None
+    base_config_path,
+    output_config_dir_path,
+    params_space_dict=None,
+    ignore_params=None,
+    consider_params=None,
+    include_default_value=False,
+    subdir_id=False,
 ):
-    params_dir_path = os.path.join(output_base_dir_path, "config")
-    os.makedirs(params_dir_path, exist_ok=True)
+    os.makedirs(output_config_dir_path, exist_ok=True)
 
     ignore_params_set = set()
     if ignore_params:
@@ -222,10 +213,7 @@ def generate_config_files(
     if consider_params:
         consider_params_set = set(consider_params)
 
-    params_base_cfg_dict = read_params_space(base_config_path)
-    # pprint.pprint(params_base_cfg_dict)
-    ## convert to standard config dict
-    params_base_cfg_dict = {key: subdict["value"] for key, subdict in params_base_cfg_dict.items()}
+    cfg_params_values_dict = read_cfg_to_dict(base_config_path, params_space_dict)
 
     param_list = []
     for param_name, param_def in params_space_dict.items():
@@ -237,49 +225,92 @@ def generate_config_files(
                 # ignore parameter
                 continue
 
-        base_param_value = params_base_cfg_dict.get(param_name)
-        param_values = generate_param_values(base_param_value, param_def)
+        curr_param_value = cfg_params_values_dict.get(param_name)
+        param_values = generate_param_values(
+            param_name, curr_param_value, param_def, include_current_value=include_default_value
+        )
         if not param_values:
             # params not changed -- skip
             continue
 
         params_data = []
         for param_val in param_values:
-            param_id = f"{param_name}-{param_val}"
-            out_cfg_path = os.path.join(params_dir_path, f"{param_id}.cfg")
+            if subdir_id:
+                param_id = f"{param_name}/{param_val}"
+            else:
+                param_id = f"{param_name}-{param_val}"
+            out_cfg_path = os.path.join(output_config_dir_path, f"{param_id}.cfg")
+            out_cfg_dir = os.path.dirname(out_cfg_path)
+            os.makedirs(out_cfg_dir, exist_ok=True)
             params_data.append((param_val, param_id, out_cfg_path))
 
-            curr_cfg_dict = copy.copy(params_base_cfg_dict)
-            # curr_cfg_dict = copy.deepcopy(params_base_cfg_dict)
+            curr_cfg_dict = copy.copy(cfg_params_values_dict)
+            # curr_cfg_dict = copy.deepcopy(cfg_params_values_dict)
             curr_cfg_dict[param_name] = param_val
 
             # execute uncrustify in separate thread
             write_dict_to_cfg(curr_cfg_dict, out_cfg_path)
 
-        param_list.append((param_name, param_def, params_data, base_param_value))
+        param_list.append((param_name, param_def, params_data, curr_param_value))
 
     return param_list
 
 
-def generate_param_values(curr_param_value, param_def_dict):
-    # pprint.pprint(param_def_dict, indent=4, sort_dicts=False)
+def generate_param_values(param_name, curr_param_value, param_def_dict, include_current_value=False):
     param_type = param_def_dict["type"]
+
     if param_type == ParamType.STRING:
         return None
+
     if param_type == ParamType.INTEGER:
-        return [curr_param_value + 1]
+        ret_list = [curr_param_value - 1, curr_param_value + 1]
+        if include_current_value:
+            ret_list.insert(0, curr_param_value)
+        return ret_list
+
     if param_type == ParamType.UNSIGNED:
-        return [curr_param_value + 1]
+        if param_name == "code_width":
+            typical_set = set([0, 80, 120, 240])
+            if include_current_value:
+                typical_set.add(curr_param_value)
+            else:
+                typical_set.remove(curr_param_value)
+            return list(typical_set)
+        if param_name == "cmt_width":
+            typical_set = set([0, 80, 120, 240])
+            if include_current_value:
+                typical_set.add(curr_param_value)
+            else:
+                typical_set.remove(curr_param_value)
+            return list(typical_set)
+        if param_name == "indent_columns":
+            typical_set = set([2, 3, 4, 8])
+            if include_current_value:
+                typical_set.add(curr_param_value)
+            else:
+                typical_set.remove(curr_param_value)
+            return list(typical_set)
+
+        ret_list = [curr_param_value + 1]
+        if curr_param_value > 0:
+            ret_list.insert(0, curr_param_value - 1)
+        if include_current_value:
+            ret_list.insert(0, curr_param_value)
+        return ret_list
+
     if param_type == ParamType.SET:
         allowed_values = param_def_dict["allowed"]
         if not allowed_values:
             raise RuntimeError("invalid 'allowed' value for parameter definition")
         allowed_list = copy.deepcopy(allowed_values)
-        if curr_param_value in allowed_list:
-            allowed_list.remove(curr_param_value)
+        if not include_current_value:
+            # remove current
+            if curr_param_value in allowed_list:
+                allowed_list.remove(curr_param_value)
         if not allowed_list:
             return None
         return list(allowed_list)
+
     raise RuntimeError(f"unahandled param type: {param_type} {type(param_type)}")
 
 
@@ -317,6 +348,7 @@ def label_to_link(label):
 
 
 def name_to_diff_filename(name):
+    name = name.replace("/", "-")
     return f"{name}.diff.txt"
 
 

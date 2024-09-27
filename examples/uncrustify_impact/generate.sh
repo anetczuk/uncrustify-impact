@@ -23,7 +23,7 @@ cd "$SCRIPT_DIR/../../src/"
 
 ARGS=()
 ARGS+=(impact)
-ARGS+=(--file "$SCRIPT_DIR/example.cpp")
+ARGS+=(--files "$SCRIPT_DIR/example.cpp")
 ARGS+=(--config "$SCRIPT_DIR/config.cfg")
 ARGS+=(--outputdir "$OUT_DIR")
 ARGS+=(--ignoreparams code_width cmt_width indent_columns)

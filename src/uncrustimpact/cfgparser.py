@@ -32,6 +32,18 @@ def print_params_space():
     json.dump(params_space_dict, sys.stdout, indent=4)
 
 
+def prepare_params_space_dict(params_space_path, override_def_params_space=False):
+    params_space_dict = None
+    if params_space_path:
+        params_space_dict = load_params_space_json(params_space_path)
+        if override_def_params_space:
+            def_space_dict = get_default_params_space()
+            params_space_dict = {**def_space_dict, **params_space_dict}
+    else:
+        params_space_dict = get_default_params_space()
+    return params_space_dict
+
+
 def get_default_params_space():
     default_cfg_path = "/tmp/uncrustify_show-config.txt"  # nosec
     error_code = os.system(f"uncrustify --show-config > {default_cfg_path}")  # nosec
@@ -102,6 +114,8 @@ def read_params_space(cfg_path):
         else:
             raise RuntimeError(f"unknown type: {comment} example value: {value}")
 
+        value = convert_value(value, param_type)
+
         param_dict = {"value": value, "type": param_type, "allowed": allowed_set, "doc": recent_comments, "line": line}
         all_params_dict[name] = param_dict
 
@@ -122,6 +136,59 @@ def read_doc_set(doc_string):
     if allowed:
         return sorted(allowed)
     return None
+
+
+def convert_value(value_str, value_type: ParamType):
+    if value_type is None:
+        return value_str
+
+    if value_type is ParamType.STRING:
+        return value_str
+    if value_type is ParamType.INTEGER:
+        return int(value_str)
+    if value_type is ParamType.UNSIGNED:
+        return int(value_str)
+    if value_type is ParamType.SET:
+        return value_str
+
+    raise RuntimeError(f"unknown type: {value_type}")
+
+
+## ========================================================
+
+
+def read_cfg_to_dict(cfg_path, params_space_dict=None):
+    if params_space_dict is None:
+        params_space_dict = {}
+    with open(cfg_path, encoding="utf-8") as item_file:
+        lines_list = item_file.readlines()
+
+    all_params_dict = {}
+
+    for line in lines_list:
+        line = line.strip()
+        if not line:
+            # empty line
+            continue
+        if line.startswith("#"):
+            # comment line
+            continue
+        name_val = line.split("=")
+        name = name_val[0]
+        name = name.strip()
+        val_comm = name_val[1]
+        val_comm = val_comm.strip()
+        val_comm = val_comm.split("#")
+        value = val_comm[0]
+        value = value.strip()
+
+        param_def = params_space_dict.get(name, {})
+        value_type = param_def.get("type")
+        value = convert_value(value, value_type)
+
+        all_params_dict[name] = value
+
+    return all_params_dict
 
 
 def write_dict_to_cfg(params_dict, out_path):
