@@ -13,6 +13,8 @@ import re
 from collections import Counter
 import json
 
+from subprocess import Popen, PIPE  # nosec
+
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
 
@@ -20,7 +22,13 @@ from multiprocessing.pool import ThreadPool
 # from uncrustimpact.multiprocessingmock import DummyPool as ThreadPool
 
 from uncrustimpact.filediff import Changes
-from uncrustimpact.cfgparser import write_dict_to_cfg, ParamType, prepare_params_space_dict, read_cfg_to_dict
+from uncrustimpact.cfgparser import (
+    write_dict_to_cfg,
+    ParamType,
+    prepare_params_space_dict,
+    read_cfg_to_dict,
+    is_cfg_valid,
+)
 from uncrustimpact.printhtml import print_to_html, print_impactparam_page, generate_params_stats, print_impact_page
 
 
@@ -30,11 +38,34 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def execute_uncrustify(input_file_path, input_config_path, out_file_path):
-    command = f"uncrustify -q -c {input_config_path} --no-backup -f {input_file_path} -o {out_file_path}"
-    error_code = os.system(command)  # nosec
-    if error_code != 0:
-        _LOGGER.error("unable to execute command: %s", command)
-        raise RuntimeError("unable to execute uncrustify")
+    # command = f"uncrustify -q -c {input_config_path} --no-backup -f {input_file_path} -o {out_file_path}"
+    # error_code = os.system(command)  # nosec
+    # if error_code != 0:
+    #     _LOGGER.error("unable to execute command: %s", command)
+    #     raise RuntimeError("unable to execute uncrustify")
+
+    command = [
+        "uncrustify",
+        "-q",
+        "-c",
+        f"{input_config_path}",
+        "--no-backup",
+        "-f",
+        f"{input_file_path}",
+        "-o",
+        f"{out_file_path}",
+    ]
+    # print("executing:", command)
+
+    with Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE) as process:  # nosec
+        output = process.communicate()
+        error_code = process.returncode
+        if error_code != 0:
+            stderr_output = output[1]
+            stderr_output = stderr_output.decode()
+            command_str = " ".join(command)
+            _LOGGER.error("unable to execute command: %s reason: %s", command_str, stderr_output)
+            raise RuntimeError("unable to execute uncrustify")
 
 
 def calculate_impact(
@@ -213,7 +244,13 @@ def generate_config_files(
     if consider_params:
         consider_params_set = set(consider_params)
 
-    cfg_params_values_dict = read_cfg_to_dict(base_config_path, params_space_dict)
+    cfg_params_values_dict = {}
+    if base_config_path:
+        cfg_params_values_dict = read_cfg_to_dict(base_config_path, params_space_dict)
+    else:
+        cfg_params_values_dict = prepare_params_space_dict()
+        ## convert to standard config dict
+        cfg_params_values_dict = {key: subdict["value"] for key, subdict in cfg_params_values_dict.items()}
 
     param_list = []
     for param_name, param_def in params_space_dict.items():
@@ -235,6 +272,14 @@ def generate_config_files(
 
         params_data = []
         for param_val in param_values:
+            curr_cfg_dict = copy.copy(cfg_params_values_dict)
+            # curr_cfg_dict = copy.deepcopy(cfg_params_values_dict)
+            curr_cfg_dict[param_name] = param_val
+
+            if not is_cfg_valid(curr_cfg_dict):
+                # config parameters are invalid (cause uncrustify to fail)
+                continue
+
             if subdir_id:
                 param_id = f"{param_name}/{param_val}"
             else:
@@ -243,10 +288,6 @@ def generate_config_files(
             out_cfg_dir = os.path.dirname(out_cfg_path)
             os.makedirs(out_cfg_dir, exist_ok=True)
             params_data.append((param_val, param_id, out_cfg_path))
-
-            curr_cfg_dict = copy.copy(cfg_params_values_dict)
-            # curr_cfg_dict = copy.deepcopy(cfg_params_values_dict)
-            curr_cfg_dict[param_name] = param_val
 
             # execute uncrustify in separate thread
             write_dict_to_cfg(curr_cfg_dict, out_cfg_path)

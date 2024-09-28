@@ -32,7 +32,7 @@ def print_params_space():
     json.dump(params_space_dict, sys.stdout, indent=4)
 
 
-def prepare_params_space_dict(params_space_path, override_def_params_space=False):
+def prepare_params_space_dict(params_space_path=None, override_def_params_space=False):
     params_space_dict = None
     if params_space_path:
         params_space_dict = load_params_space_json(params_space_path)
@@ -46,9 +46,7 @@ def prepare_params_space_dict(params_space_path, override_def_params_space=False
 
 def get_default_params_space():
     default_cfg_path = "/tmp/uncrustify_show-config.txt"  # nosec
-    error_code = os.system(f"uncrustify --show-config > {default_cfg_path}")  # nosec
-    if error_code != 0:
-        raise RuntimeError("unable to execute uncrustify")
+    generate_default_config(default_cfg_path)
     return read_params_space(default_cfg_path)
 
 
@@ -75,25 +73,21 @@ def read_params_space(cfg_path):
     recent_comments = ""
 
     for line in lines_list:
-        line = line.strip()
-        if not line:
-            # empty line
-            recent_comments = ""
+        cfg_line = CfgLine(line)
+        if not cfg_line.name:
+            if cfg_line.comment:
+                recent_comments += "#" + cfg_line.comment
+                # recent_comments += "#" + cfg_line.comment.rstrip() + "\n"
+            else:
+                # empty line
+                recent_comments = ""
             continue
-        if line.startswith("#"):
-            # comment line
-            recent_comments += line + "\n"
-            continue
-        name_val = line.split("=")
-        name = name_val[0]
-        name = name.strip()
-        val_comm = name_val[1]
-        val_comm = val_comm.strip()
-        val_comm = val_comm.split("#")
-        value = val_comm[0]
-        value = value.strip()
-        comment = val_comm[1]
-        comment = comment.strip()
+
+        name = cfg_line.name
+        value = cfg_line.value
+        comment = ""
+        if cfg_line.comment:
+            comment = cfg_line.comment.strip()
 
         param_type = None
         allowed_set = None
@@ -157,6 +151,47 @@ def convert_value(value_str, value_type: ParamType):
 ## ========================================================
 
 
+def read_config_content(config_path):
+    if not config_path:
+        # read default config
+        config_path = "/tmp/uncrustify_show-config.txt"  # nosec
+        generate_default_config(config_path)
+
+    # read lines
+    with open(config_path, encoding="utf-8") as item_file:
+        return item_file.readlines()
+
+
+def generate_default_config(config_path):
+    error_code = os.system(f"uncrustify --show-config > {config_path}")  # nosec
+    if error_code != 0:
+        raise RuntimeError("unable to execute uncrustify")
+
+
+def modify_config_params(config_lines, params_dict):
+    ret_list = []
+    for line in config_lines:
+        cfg_line = CfgLine(line)
+        if not cfg_line.name:
+            ret_list.append(line)
+            continue
+        param_value = params_dict.get(cfg_line.name)
+        if param_value is None:
+            continue
+        cfg_line.value = str(param_value)
+        new_line = cfg_line.join()
+        ret_list.append(new_line)
+    return ret_list
+
+
+def write_config_content(out_cfg_path, config_lines):
+    with open(out_cfg_path, "w", encoding="utf-8") as out_file:
+        out_file.writelines(config_lines)
+
+
+## ========================================================
+
+
 def read_cfg_to_dict(cfg_path, params_space_dict=None):
     if params_space_dict is None:
         params_space_dict = {}
@@ -166,29 +201,82 @@ def read_cfg_to_dict(cfg_path, params_space_dict=None):
     all_params_dict = {}
 
     for line in lines_list:
-        line = line.strip()
-        if not line:
-            # empty line
+        cfg_line = CfgLine(line)
+        if cfg_line.is_valid() is False:
             continue
-        if line.startswith("#"):
-            # comment line
-            continue
-        name_val = line.split("=")
-        name = name_val[0]
-        name = name.strip()
-        val_comm = name_val[1]
-        val_comm = val_comm.strip()
-        val_comm = val_comm.split("#")
-        value = val_comm[0]
-        value = value.strip()
 
-        param_def = params_space_dict.get(name, {})
+        param_def = params_space_dict.get(cfg_line.name, {})
         value_type = param_def.get("type")
-        value = convert_value(value, value_type)
+        value = convert_value(cfg_line.value, value_type)
 
-        all_params_dict[name] = value
+        all_params_dict[cfg_line.name] = value
 
     return all_params_dict
+
+
+class CfgLine:
+    def __init__(self, line_string):
+        self.space0 = None
+        self.name = None
+        self.space1 = None
+        # equal sign goes between space1 and space2
+        self.space2 = None
+        self.value = None
+        self.space3 = None
+        self.comment = None
+
+        self._parse(line_string)
+
+    def _parse(self, cfg_line):
+        self.space0, line = split_leading_spaces(cfg_line)
+        if not line:
+            # empty line
+            return
+        if line.startswith("#"):
+            # comment line
+            self.comment = line[1:]
+            return
+        name_val = line.split("=")
+        self.name, self.space1 = split_trailing_spaces(name_val[0])
+        self.space2, val_comm = split_leading_spaces(name_val[1])
+        val_comm = val_comm.split("#")
+        self.value, self.space3 = split_trailing_spaces(val_comm[0])
+        if len(val_comm) > 1:
+            self.comment = val_comm[1]
+
+    def is_valid(self):
+        return bool(self.name)
+
+    def join(self):
+        ret_str = ""
+        if self.space0:
+            ret_str += self.space0
+        if self.name:
+            ret_str += self.name
+            if self.space1:
+                ret_str += self.space1
+            ret_str += "="
+        if self.space2:
+            ret_str += self.space2
+        if self.value:
+            ret_str += self.value
+        if self.space3:
+            ret_str += self.space3
+        if self.comment:
+            ret_str += "#" + self.comment
+        return ret_str
+
+
+def split_leading_spaces(data_string):
+    stripped = data_string.lstrip()
+    length = len(data_string) - len(stripped)
+    return (data_string[:length], stripped)
+
+
+def split_trailing_spaces(data_string):
+    stripped = data_string.rstrip()
+    length = len(stripped)
+    return (stripped, data_string[length:])
 
 
 def write_dict_to_cfg(params_dict, out_path):
@@ -197,3 +285,19 @@ def write_dict_to_cfg(params_dict, out_path):
         for param_name, param_val in params_dict.items():
             content += f"""{param_name} = {param_val}\n"""
         out_file.write(content)
+
+
+## ========================================================
+
+
+def is_cfg_valid(cfg_dict):
+    nl_max = cfg_dict.get("nl_max")
+    if nl_max is None:
+        return True
+    nl_func_var_def_blk = cfg_dict.get("nl_func_var_def_blk")
+    if nl_max > 0:
+        if nl_func_var_def_blk is None:
+            return True
+        if nl_func_var_def_blk >= nl_max:
+            return False
+    return True

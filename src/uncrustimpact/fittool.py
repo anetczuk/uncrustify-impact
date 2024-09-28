@@ -18,7 +18,12 @@ from multiprocessing import Pool
 from uncrustimpact.multiprocessingmock import DummyPool as ThreadPool
 
 from uncrustimpact.filediff import Changes
-from uncrustimpact.cfgparser import write_dict_to_cfg, prepare_params_space_dict
+from uncrustimpact.cfgparser import (
+    prepare_params_space_dict,
+    read_config_content,
+    modify_config_params,
+    write_config_content,
+)
 from uncrustimpact.printhtml import print_fit_page, print_fitparam_page
 from uncrustimpact.impacttool import generate_config_files, get_common_prefix_len, convert_path, execute_uncrustify
 from uncrustimpact.difftool import print_diff_page
@@ -42,6 +47,7 @@ def calculate_fit(
 
     params_space_dict = prepare_params_space_dict(params_space_path, override_def_params_space)
 
+    _LOGGER.info("using input config: %s", base_config_path)
     _LOGGER.info("generating config files")
     output_config_dir_path = os.path.join(output_base_dir_path, "config")
     param_list = generate_config_files(
@@ -120,7 +126,10 @@ def calculate_fit(
     best_cfg_name = "best_config.cfg"
     params_dict = {key: item[0] for key, item in best_fit.items()}
     best_cfg_path = os.path.join(output_base_dir_path, best_cfg_name)
-    write_dict_to_cfg(params_dict, best_cfg_path)
+    # write_dict_to_cfg(params_dict, best_cfg_path)
+    base_config_content = read_config_content(base_config_path)
+    best_config_content = modify_config_params(base_config_content, params_dict)
+    write_config_content(best_cfg_path, best_config_content)
 
     out_path = os.path.join(output_base_dir_path, "index.html")
     _LOGGER.info("writing main page in file://%s", out_path)

@@ -188,7 +188,13 @@ def main():
         default=[".h", ".hpp", ".c", "cpp"],
         help="List of extensions to look for (in case of --dir)",
     )
-    subparser.add_argument("-c", "--config", action="store", required=True, help="Base uncrustify config")
+    subparser.add_argument(
+        "-c",
+        "--config",
+        action="store",
+        required=False,
+        help="Base uncrustify config. Default config will be used if not given.",
+    )
     subparser.add_argument("-od", "--outputdir", action="store", required=True, help="Output directory")
     subparser.add_argument("-ps", "--paramsspace", action="store", help="Path to params space config JSON")
     subparser.add_argument(

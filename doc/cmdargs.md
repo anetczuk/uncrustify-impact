@@ -98,9 +98,9 @@ optional arguments:
 ## <a name="fit_help"></a> python3 -m uncrustimpact fit --help
 ```
 usage: python3 -m uncrustimpact fit [-h] [-f FILES [FILES ...]] [-d DIR]
-                                    [--extlist EXTLIST [EXTLIST ...]] -c
-                                    CONFIG -od OUTPUTDIR [-ps PARAMSSPACE]
-                                    [-odps]
+                                    [--extlist EXTLIST [EXTLIST ...]]
+                                    [-c CONFIG] -od OUTPUTDIR
+                                    [-ps PARAMSSPACE] [-odps]
                                     [-ip IGNOREPARAMS [IGNOREPARAMS ...]]
                                     [-cp CONSIDERPARAMS [CONSIDERPARAMS ...]]
 
@@ -115,7 +115,8 @@ optional arguments:
                         List of extensions to look for (in case of --dir)
                         (default: ['.h', '.hpp', '.c', 'cpp'])
   -c CONFIG, --config CONFIG
-                        Base uncrustify config (default: None)
+                        Base uncrustify config. Default config will be used if
+                        not given. (default: None)
   -od OUTPUTDIR, --outputdir OUTPUTDIR
                         Output directory (default: None)
   -ps PARAMSSPACE, --paramsspace PARAMSSPACE
