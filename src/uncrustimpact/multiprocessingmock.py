@@ -17,6 +17,9 @@ class ResultObject:
 
 # single threaded pool with multiprocessing.Pool interface
 class DummyPool:
+    def __init__(self, *args, **kwargs):
+        pass
+
     def __enter__(self):
         return self
 

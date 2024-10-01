@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, Arkadiusz Netczuk <dev.arnet@gmail.com>
+# Copyright (c) 2024, Arkadiusz Netczuk <dev.arnet@gmail.com>
 # All rights reserved.
 #
 # This source code is licensed under the BSD 3-Clause license found in the
@@ -13,15 +13,15 @@ import re
 from collections import Counter
 import json
 
-from subprocess import Popen, PIPE  # nosec
+# from subprocess import Popen, PIPE  # nosec
 
-from multiprocessing import Pool
-from multiprocessing.pool import ThreadPool
+from multiprocessing import Pool as L1Pool
+from multiprocessing.pool import ThreadPool as L2Pool
 
-# from uncrustimpact.multiprocessingmock import DummyPool as Pool
-# from uncrustimpact.multiprocessingmock import DummyPool as ThreadPool
+# from uncrustimpact.multiprocessingmock import DummyPool as L1Pool
+# from uncrustimpact.multiprocessingmock import DummyPool as L2Pool
 
-from uncrustimpact.filediff import Changes
+from uncrustimpact.filediff import UnifiedDiffChanges
 from uncrustimpact.cfgparser import (
     write_dict_to_cfg,
     ParamType,
@@ -38,34 +38,37 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def execute_uncrustify(input_file_path, input_config_path, out_file_path):
-    # command = f"uncrustify -q -c {input_config_path} --no-backup -f {input_file_path} -o {out_file_path}"
-    # error_code = os.system(command)  # nosec
-    # if error_code != 0:
-    #     _LOGGER.error("unable to execute command: %s", command)
-    #     raise RuntimeError("unable to execute uncrustify")
+    ## faster than subprocess
+    command = f"uncrustify -q -c {input_config_path} --no-backup -l CPP -f {input_file_path} -o {out_file_path}"
+    error_code = os.system(command)  # nosec
+    if error_code != 0:
+        _LOGGER.error("unable to execute command: %s", command)
+        raise RuntimeError("unable to execute uncrustify")
 
-    command = [
-        "uncrustify",
-        "-q",
-        "-c",
-        f"{input_config_path}",
-        "--no-backup",
-        "-f",
-        f"{input_file_path}",
-        "-o",
-        f"{out_file_path}",
-    ]
-    # print("executing:", command)
-
-    with Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE) as process:  # nosec
-        output = process.communicate()
-        error_code = process.returncode
-        if error_code != 0:
-            stderr_output = output[1]
-            stderr_output = stderr_output.decode()
-            command_str = " ".join(command)
-            _LOGGER.error("unable to execute command: %s reason: %s", command_str, stderr_output)
-            raise RuntimeError("unable to execute uncrustify")
+    # command = [
+    #     "uncrustify",
+    #     # "-q",
+    #     "-c",
+    #     f"{input_config_path}",
+    #     "--no-backup",
+    #     "-l", "CPP"
+    #     "-f",
+    #     f"{input_file_path}",
+    #     "-o",
+    #     f"{out_file_path}",
+    # ]
+    # # print("executing:", command)
+    #
+    # with Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE) as process:  # nosec
+    #     process.wait()
+    #     error_code = process.returncode
+    #     if error_code != 0:
+    #         stdout_output = process.stdout.decode()
+    #         stderr_output = process.stderr.decode()
+    #         command_str = " ".join(command)
+    # _LOGGER.error("unable to execute command: %s\n=== std out: ===\n%s\n=== std err: ===\n%s",
+    #               command_str, stdout_output, stderr_output)
+    #         raise RuntimeError("unable to execute uncrustify")
 
 
 def calculate_impact(
@@ -95,7 +98,7 @@ def calculate_impact(
     _LOGGER.info("calculating files impact")
     unused_cfg_counter = Counter()
     files_stats = {}
-    with Pool() as process_pool:
+    with L1Pool() as process_pool:
         result_queue = []
 
         for file_path in input_base_file_set:
@@ -151,7 +154,7 @@ def calculate_impact_file(input_base_file_path, base_config_path, param_list, ou
     with open(base_file_path, encoding="utf-8") as file_1:
         filebase_text = file_1.readlines()
 
-    changes = Changes("base", filebase_text)
+    changes = UnifiedDiffChanges("base", filebase_text)
 
     params_stats = {}
 
@@ -186,7 +189,7 @@ def calculate_impact_file(input_base_file_path, base_config_path, param_list, ou
             # write files diff to file
             diff_filename = name_to_diff_filename(param_id)
             out_diff_path = os.path.join(params_dir_path, diff_filename)
-            raw_diff = "".join(raw_diff)
+            raw_diff = changes.print_diff_list(raw_diff)
             with open(out_diff_path, "w", encoding="utf-8") as out_file:
                 out_file.write(raw_diff)
 
@@ -298,6 +301,9 @@ def generate_config_files(
 
 
 def generate_param_values(param_name, curr_param_value, param_def_dict, include_current_value=False):
+    if param_name in ("string_escape_char", "string_escape_char2"):
+        return [curr_param_value]
+
     param_type = param_def_dict["type"]
 
     if param_type == ParamType.STRING:
@@ -366,7 +372,7 @@ def generate_file_variants(input_file_path, param_list, output_dir):
             out_file_path = os.path.join(output_dir, f"{param_id}.txt")
             tasks_data.append([input_file_path, input_cfg_path, out_file_path])
 
-    with ThreadPool() as process_pool:
+    with L2Pool() as process_pool:
         process_pool.starmap(execute_uncrustify, tasks_data)
 
 

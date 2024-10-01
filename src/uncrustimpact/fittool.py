@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, Arkadiusz Netczuk <dev.arnet@gmail.com>
+# Copyright (c) 2024, Arkadiusz Netczuk <dev.arnet@gmail.com>
 # All rights reserved.
 #
 # This source code is licensed under the BSD 3-Clause license found in the
@@ -10,14 +10,21 @@ import os
 import logging
 
 import shutil
-from multiprocessing import Pool
 
-# from multiprocessing.pool import ThreadPool
+# no threading: 4m 35s
+# threading + none: 3m 40s
+# none + proc: 1m 16sec
+# th + proc: 1m 26sec
+# proc + proc: not allowed
+# proc + th: 4m 40sec
 
-# from uncrustimpact.multiprocessingmock import DummyPool as Pool
-from uncrustimpact.multiprocessingmock import DummyPool as ThreadPool
+from multiprocessing import Pool as L1Pool
+from multiprocessing.pool import ThreadPool as L2Pool
 
-from uncrustimpact.filediff import Changes
+# from uncrustimpact.multiprocessingmock import DummyPool as L1Pool
+# from uncrustimpact.multiprocessingmock import DummyPool as L2Pool
+
+from uncrustimpact.filediff import UnifiedDiffChanges
 from uncrustimpact.cfgparser import (
     prepare_params_space_dict,
     read_config_content,
@@ -64,17 +71,31 @@ def calculate_fit(
 
     _LOGGER.info("calculating files fit")
     best_fit = {}
-    with Pool() as process_pool:
+    process_num = os.cpu_count()
+    # process_num = 5      # 0m49,245s
+    # process_num = 10     # 0m43,878s
+    # process_num = 15     # 0m42,055s
+    # process_num = 20     # 0m42,390s
+    # process_num = 40     # 0m39,836s
+    with L1Pool(process_num) as process_pool:
         result_queue = []
 
+        total_parameters_variants = 0
+        for param_item in param_list:
+            param_values = param_item[2]
+            total_parameters_variants += len(param_values)
+
+        variant_counter = 0
         for param_item in param_list:
             param_values = param_item[2]
 
             param_variants = []
 
             for param_single_val in param_values:
+                variant_counter += 1
+                progress = int(variant_counter / total_parameters_variants * 10000) / 100
                 async_result = process_pool.apply_async(
-                    calculate_fit_param, [param_single_val, input_base_file_set, out_param_dir_path]
+                    calculate_fit_param, [progress, param_single_val, input_base_file_set, out_param_dir_path]
                 )
 
                 param_variants.append((param_single_val, async_result))
@@ -150,8 +171,8 @@ def calculate_fit(
             shutil.rmtree(out_param_dir)
 
 
-def calculate_fit_param(param_data, input_file_path_set, output_base_dir_path):
-    # _LOGGER.info("handling parameter %s", param_name)
+def calculate_fit_param(progress, param_data, input_file_path_set, output_base_dir_path):
+    _LOGGER.info("handling parameter %s%%: %s", progress, param_data[1])
 
     path_prefix_len = get_common_prefix_len(input_file_path_set)
 
@@ -163,7 +184,8 @@ def calculate_fit_param(param_data, input_file_path_set, output_base_dir_path):
     param_dir_path = os.path.join(output_base_dir_path, param_id)
     os.makedirs(param_dir_path, exist_ok=True)
 
-    with ThreadPool() as process_pool:
+    threads_num = os.cpu_count()
+    with L2Pool(threads_num) as process_pool:
         result_queue = []
         for input_file_path in input_file_path_set:
             file_rel_path = input_file_path[path_prefix_len:]
@@ -171,36 +193,47 @@ def calculate_fit_param(param_data, input_file_path_set, output_base_dir_path):
             out_file_path = os.path.join(param_dir_path, file_dir_name)
 
             async_result = process_pool.apply_async(
-                execute_uncrustify, [input_file_path, input_cfg_path, out_file_path]
+                calculate_fit_file, [input_cfg_path, input_file_path, out_file_path, param_dir_path]
             )
-            result_queue.append((input_file_path, out_file_path, async_result))
+            result_queue.append(async_result)
 
         # wait for results
-        for input_file_path, out_file_path, async_result in result_queue:
-            async_result.get()
-
-            with open(input_file_path, encoding="utf-8") as file_1:
-                filebase_text = file_1.readlines()
-            changes = Changes("base", filebase_text)
-
-            with open(out_file_path, encoding="utf-8") as item_file:
-                item_text = item_file.readlines()
-            raw_diff = changes.calculate_diff(item_text)
-            changes.parse_diff(None, raw_diff)
-            # changes.parse_diff("change", raw_diff)
-
-            # write files diff to file
-            # diff_filename = name_to_diff_filename(param_id)
-            out_diff_path = os.path.join(param_dir_path, "diff.txt")
-            raw_diff = "".join(raw_diff)
-            with open(out_diff_path, "w", encoding="utf-8") as out_file:
-                out_file.write(raw_diff)
-
-            out_diff_page_path = os.path.join(param_dir_path, "index.html")
-            input_filename = os.path.basename(out_file_path)
-            print_diff_page(changes, out_diff_page_path, input_filename)
-
-            param_changes = changes.count_changes()
-            param_changes_counter += param_changes
+        for async_result in result_queue:
+            param_changes_counter += async_result.get()
 
     return param_changes_counter
+
+
+def calculate_fit_file(input_cfg_path, input_file_path, out_file_path, out_param_dir_path):
+    execute_uncrustify(input_file_path, input_cfg_path, out_file_path)
+
+    with open(input_file_path, encoding="utf-8") as file_1:
+        filebase_text = file_1.readlines()
+    changes = UnifiedDiffChanges("base", filebase_text)
+
+    with open(out_file_path, encoding="utf-8") as item_file:
+        item_text = item_file.readlines()
+    raw_diff = changes.calculate_diff(item_text)
+    changes.parse_diff(None, raw_diff)
+    # changes.parse_diff("change", raw_diff)
+
+    # write files diff to file
+    # diff_filename = name_to_diff_filename(param_id)
+    out_diff_path = os.path.join(out_param_dir_path, "diff.txt")
+    raw_diff = "".join(raw_diff)
+    with open(out_diff_path, "w", encoding="utf-8") as out_file:
+        out_file.write(raw_diff)
+
+    out_diff_page_path = os.path.join(out_param_dir_path, "index.html")
+    input_filename = os.path.basename(out_file_path)
+    print_diff_page(changes, out_diff_page_path, input_filename)
+
+    return changes.count_changes()
+
+
+def pop_from_async_list(async_list):
+    while async_list:
+        for index, data in enumerate(async_list):
+            if data[0].ready():
+                return async_list.pop(index)
+    return None

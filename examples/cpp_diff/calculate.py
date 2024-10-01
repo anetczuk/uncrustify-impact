@@ -18,7 +18,7 @@ sys.path.append(os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir, "
 
 
 # pylint: disable=C0413
-from uncrustimpact.filediff import Changes
+from uncrustimpact.filediff import NDiffChanges
 from uncrustimpact.printhtml import print_to_html
 
 
@@ -28,7 +28,7 @@ def compare(filename_base, filename_list, outname):
     with open(file1_path, encoding="utf-8") as file_1:
         filebase_text = file_1.readlines()
 
-    changes = Changes(filename_base, filebase_text)
+    changes = NDiffChanges(filename_base, filebase_text)
 
     for item in filename_list:
         item_path = os.path.join(SCRIPT_DIR, item)

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, Arkadiusz Netczuk <dev.arnet@gmail.com>
+# Copyright (c) 2024, Arkadiusz Netczuk <dev.arnet@gmail.com>
 # All rights reserved.
 #
 # This source code is licensed under the BSD 3-Clause license found in the
@@ -9,7 +9,8 @@
 import os
 import html
 
-from uncrustimpact.filediff import Changes, LineModifier
+from uncrustimpact.filediff import LineModifier
+from uncrustimpact.filediff import Changes
 from uncrustimpact.cfgparser import ParamType
 
 

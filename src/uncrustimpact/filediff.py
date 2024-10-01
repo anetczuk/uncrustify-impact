@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, Arkadiusz Netczuk <dev.arnet@gmail.com>
+# Copyright (c) 2024, Arkadiusz Netczuk <dev.arnet@gmail.com>
 # All rights reserved.
 #
 # This source code is licensed under the BSD 3-Clause license found in the
@@ -171,6 +171,9 @@ class ModifyStream:
         self.modify_list.append((line_number, modifier))
 
 
+# ==============================================================
+
+
 class FileState:
     def __init__(self, length):
         self.before: LineModifiers = LineModifiers()
@@ -210,60 +213,7 @@ class FileState:
         return ret_dict
 
     def parse_diff(self, label_name, diff_list) -> bool:
-        ### According to documentation:
-        #
-        # Each line of a Differ delta begins with a two-letter code:
-        #
-        #     '- '    line unique to sequence 1
-        #     '+ '    line unique to sequence 2
-        #     '  '    line common to both sequences
-        #     '? '    line not present in either input sequence
-        #
-        changed = False
-        self._line_counter = 0
-        for line in diff_list:
-            if line.startswith("  "):
-                # line the same
-                self._line_counter += 1
-                self._add_state(label_name, LineModifier.SAME)
-                continue
-            if line.startswith("+ "):
-                # line added
-                self._add_state(label_name, LineModifier.ADDED)
-                changed = True
-                continue
-            if line.startswith("- "):
-                # line removed
-                self._line_counter += 1
-                self._add_state(label_name, LineModifier.REMOVED)
-                changed = True
-                continue
-            if line.startswith("? "):
-                # line modified
-                # self._line_counter += 1
-                self._add_state(label_name, LineModifier.CHANGED)
-                changed = True
-                continue
-            raise RuntimeError("unknown marker")
-        self._end_diff()
-        return changed
-
-    def _add_state(self, label, modifier):
-        if self._line_counter == 0 and modifier == LineModifier.ADDED:
-            line_state: LineModifiers = self._get_modifier_item(self._line_counter)
-            line_state.add_state(label, modifier)
-            return
-
-        modify_list = self._modify_stream.add(self._line_counter, modifier)
-        for item in modify_list:
-            item_line = item[0]
-            item_modify = item[1]
-            line_state: LineModifiers = self._get_modifier_item(item_line)
-            line_state.add_state(label, item_modify)
-            self._line_counter = item_line
-
-    def _end_diff(self):
-        pass
+        raise NotImplementedError("not implemented")
 
     def _get_modifier_item(self, line_number) -> LineModifiers:
         if line_number == 0:
@@ -275,8 +225,7 @@ class Changes:
     def __init__(self, file_name, base_lines):
         self.base_file_name = file_name
         self.base_lines = base_lines
-        file_length = len(base_lines)
-        self.file_state = FileState(file_length)
+        self.file_state: FileState = None
 
     def get_content_line(self, line_index):
         return self.base_lines[line_index]
@@ -287,26 +236,11 @@ class Changes:
     def count_changes(self, label=None):
         return self.file_state.count_changes(label)
 
-    def add_diff(self, file_name, content_lines):
-        ## checks whole file
-        diff_list = self.calculate_diff(content_lines)
-
-        ## does not compare whole file
-        # diff = difflib.context_diff( file1_text, file2_text,
-        #                              fromfile = 'file1.txt',
-        #                              tofile='file2.txt',
-        #                              lineterm='')
-
-        ## does not compare whole file
-        # diff = difflib.unified_diff( file1_text, file2_text,
-        #                              fromfile = 'file1.txt',
-        #                              tofile='file2.txt',
-        #                              n=0)
-
-        return self.file_state.parse_diff(file_name, diff_list)
-
     def parse_diff(self, label_name, diff_list) -> bool:
         return self.file_state.parse_diff(label_name, diff_list)
+
+    def print_diff_list(self, diff_list):
+        return "".join(diff_list)
 
     def to_dict_raw(self):
         return self.file_state.to_dict_raw()
@@ -380,6 +314,97 @@ class Changes:
     def to_dict_modifiers(self) -> Dict[int, LineModifiers]:
         return self.file_state.to_dict_modifiers()
 
+
+# ==============================================================
+
+
+class NDiffFileState(FileState):
+    def parse_diff(self, label_name, diff_list) -> bool:
+        ### According to documentation:
+        #
+        # Each line of a Differ delta begins with a two-letter code:
+        #
+        #     '- '    line unique to sequence 1
+        #     '+ '    line unique to sequence 2
+        #     '  '    line common to both sequences
+        #     '? '    line not present in either input sequence
+        #
+
+        # print("aaaaa:", diff_list)
+
+        changed = False
+        self._line_counter = 0
+        for line in diff_list:
+            if line.startswith("  "):
+                # line the same
+                self._line_counter += 1
+                self._add_state(label_name, LineModifier.SAME)
+                continue
+            if line.startswith("+ "):
+                # line added
+                self._add_state(label_name, LineModifier.ADDED)
+                changed = True
+                continue
+            if line.startswith("- "):
+                # line removed
+                self._line_counter += 1
+                self._add_state(label_name, LineModifier.REMOVED)
+                changed = True
+                continue
+            if line.startswith("? "):
+                # line modified
+                # self._line_counter += 1
+                self._add_state(label_name, LineModifier.CHANGED)
+                changed = True
+                continue
+            raise RuntimeError(f"unknown marker: {line}")
+        self._end_diff(label_name)
+        return changed
+
+    def _end_diff(self, label):
+        # handle removed last items
+        modify_list = self._modify_stream.flush()
+        self._process_modify(label, modify_list)
+
+        state_len = len(self.line_state)
+        self._line_counter += 1
+        for index in range(self._line_counter, state_len + 1):
+            self._line_counter = index
+            self._add_state(label, LineModifier.SAME)
+
+    def _add_state(self, label, modifier):
+        if self._line_counter == 0 and modifier == LineModifier.ADDED:
+            line_state: LineModifiers = self._get_modifier_item(self._line_counter)
+            line_state.add_state(label, modifier)
+            return
+
+        modify_list = self._modify_stream.add(self._line_counter, modifier)
+        self._process_modify(label, modify_list)
+
+    def _process_modify(self, label, modify_list):
+        for item in modify_list:
+            item_line = item[0]
+            item_modify = item[1]
+            line_state: LineModifiers = self._get_modifier_item(item_line)
+            line_state.add_state(label, item_modify)
+            self._line_counter = item_line
+
+
+# this implementation is buggy and slower than UnifiedDiffChanges
+class NDiffChanges(Changes):
+    def __init__(self, file_name, base_lines):
+        super().__init__(file_name, base_lines)
+        file_length = len(base_lines)
+        self.file_state = NDiffFileState(file_length)
+
+    def add_diff(self, file_name, content_lines):
+        ## checks whole file
+        diff_list = self.calculate_diff(content_lines)
+        return self.file_state.parse_diff(file_name, diff_list)
+
+    def parse_diff(self, label_name, diff_list) -> bool:
+        return self.file_state.parse_diff(label_name, diff_list)
+
     def print_diff_raw(self, content_lines):
         diff_list = self.calculate_diff(content_lines)
         for index, line in enumerate(diff_list):
@@ -395,4 +420,162 @@ class Changes:
 
     def calculate_diff(self, content_lines):
         diff = difflib.ndiff(self.base_lines, content_lines)
+        return list(diff)
+
+
+# ==============================================================
+
+
+class UnifiedDiffFileState(FileState):
+    def parse_diff(self, label_name, diff_list) -> bool:
+        ### According to documentation:
+        #
+        # Each line of a Differ delta begins with a two-letter code:
+        #
+        #     '- '    line unique to sequence 1
+        #     '+ '    line unique to sequence 2
+        #     '  '    line common to both sequences
+        #     '? '    line not present in either input sequence
+        #
+
+        # print("aaaaa:", diff_list)
+
+        changed = False
+        self._line_counter = 0
+        diff_list = diff_list[2:]  # ignore first two items - they contain filenames only
+        for line in diff_list:
+            if line.startswith("@@"):
+                # change header
+                line_data = line.strip("@")
+                line_data = line_data.strip()
+                changes = line_data.split(" ")
+                from_start, from_changes = self._parse_change_numbers(changes[0])
+                _to_start, to_changes = self._parse_change_numbers(changes[1])
+
+                if from_changes == 0:
+                    # added
+                    self._line_counter += 1
+                    self._fill_same(label_name, from_start + 1)
+                    self._line_counter = from_start
+                    self._add_state(label_name, LineModifier.ADDED)
+                elif from_changes == to_changes:
+                    # modified
+                    self._line_counter += 1
+                    self._fill_same(label_name, from_start)
+                    self._line_counter = from_start
+                    change_end = from_start + from_changes
+                    self._fill(label_name, change_end, LineModifier.CHANGED)
+                elif from_changes > to_changes:
+                    # removed
+                    self._line_counter += 1
+                    self._fill_same(label_name, from_start)
+                    self._line_counter += 1
+                    change_end = from_start + to_changes
+                    self._fill(label_name, change_end, LineModifier.CHANGED)
+                    self._line_counter = change_end
+                    self._fill(label_name, from_start + from_changes, LineModifier.REMOVED)
+                elif from_changes < to_changes:
+                    # changed, added
+                    self._line_counter += 1
+                    self._fill_same(label_name, from_start)
+                    self._line_counter += 1
+                    change_end = from_start + from_changes
+                    self._fill(label_name, change_end, LineModifier.CHANGED)
+                    self._line_counter = change_end - 1
+                    self._add_state(label_name, LineModifier.ADDED)
+                else:
+                    raise RuntimeError(f"unhandled case: {line}")
+
+                changed = True
+                continue
+
+            if line.startswith("+"):
+                # line added
+                continue
+            if line.startswith("-"):
+                # line removed
+                continue
+
+            raise RuntimeError(f"unknown marker: {line}")
+        self._end_diff(label_name)
+        return changed
+
+    def _add_state(self, label, modifier):
+        if self._line_counter == 0 and modifier == LineModifier.ADDED:
+            line_state: LineModifiers = self._get_modifier_item(self._line_counter)
+            line_state.add_state(label, modifier)
+            return
+
+        if self._line_counter > 0:
+            line_state: LineModifiers = self._get_modifier_item(self._line_counter)
+            line_state.add_state(label, modifier)
+            return
+
+        raise RuntimeError("invalid state")
+
+    def _end_diff(self, label_name):
+        state_len = len(self.line_state)
+        self._line_counter += 1
+        self._fill_same(label_name, state_len + 1)
+
+    def _fill_same(self, label_name, end_index):
+        self._fill(label_name, end_index, LineModifier.SAME)
+
+    def _fill(self, label_name, end_index, modifier):
+        for index in range(self._line_counter, end_index):
+            self._line_counter = index
+            self._add_state(label_name, modifier)
+
+    def _parse_change_numbers(self, change_string):
+        from_change = change_string[1:]  # remove minus sign
+        from_change = from_change.split(",")
+        change_start = from_change[0]
+        change_start = int(change_start)
+        change_lines = 1
+        if len(from_change) > 1:
+            change_lines = from_change[1]
+            change_lines = int(change_lines)
+        return (change_start, change_lines)
+
+
+class UnifiedDiffChanges(Changes):
+    def __init__(self, file_name, base_lines):
+        super().__init__(file_name, base_lines)
+        file_length = len(base_lines)
+        self.file_state = UnifiedDiffFileState(file_length)
+
+    def add_diff(self, file_name, content_lines):
+        ## checks whole file
+        diff_list = self.calculate_diff(content_lines)
+        return self.file_state.parse_diff(file_name, diff_list)
+
+    def parse_diff(self, label_name, diff_list) -> bool:
+        return self.file_state.parse_diff(label_name, diff_list)
+
+    def print_diff_list(self, diff_list):
+        ret_content = ""
+        ret_content += "".join(diff_list[:2])
+        ret_content += "\n"
+        for line in diff_list[2:]:
+            if line.startswith("@@"):
+                ret_content += line + "\n"
+            else:
+                ret_content += line
+        return ret_content
+
+    def print_diff_raw(self, content_lines):
+        diff_list = self.calculate_diff(content_lines)
+        for index, line in enumerate(diff_list):
+            print(f"{index} >{line}", end="")
+
+    def print_diff(self, nice=True):
+        data_dict = self.file_state.to_dict_raw()
+        if nice:
+            out = pprint.pformat(data_dict, indent=4)
+            print(out)
+        else:
+            print(data_dict)
+
+    def calculate_diff(self, content_lines):
+        diff = difflib.unified_diff(self.base_lines, content_lines, n=0, lineterm="")
         return list(diff)

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, Arkadiusz Netczuk <dev.arnet@gmail.com>
+# Copyright (c) 2024, Arkadiusz Netczuk <dev.arnet@gmail.com>
 # All rights reserved.
 #
 # This source code is licensed under the BSD 3-Clause license found in the
@@ -14,6 +14,7 @@ import logging
 from multiprocessing import Pool
 
 from uncrustimpact.filediff import Changes
+from uncrustimpact.filediff import UnifiedDiffChanges
 from uncrustimpact.cfgparser import read_params_space
 from uncrustimpact.printhtml import print_to_html, print_impact_page
 from uncrustimpact.impacttool import (
@@ -76,7 +77,7 @@ def calculate_diff_file(input_base_file_path, base_config_path, output_base_dir_
     ## convert to standard config dict
     params_base_cfg_dict = {key: subdict["value"] for key, subdict in params_base_cfg_dict.items()}
 
-    changes = Changes("base", filebase_text)
+    changes = UnifiedDiffChanges("base", filebase_text)
 
     execute_uncrustify(input_base_file_path, base_config_path, out_file_path)
 
